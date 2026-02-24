@@ -39,6 +39,9 @@ export default function HomePage() {
               : 'Все выпускники нашего университета'}
           </p>
         </div>
+      </div>
+
+      <div className="search-center">
         <div className="search-wrap">
           <input
             className="search-input"

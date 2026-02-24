@@ -188,6 +188,12 @@ img { display: block; }
 }
 
 /* ========= Search ========= */
+.search-center {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
 .search-wrap {
   position: relative;
 }
@@ -197,9 +203,10 @@ img { display: block; }
   border: 1px solid var(--border);
   color: var(--text-primary);
   border-radius: var(--radius-sm);
-  padding: 0.6rem 1rem 0.6rem 2.5rem;
-  font-size: 0.875rem;
-  width: 280px;
+  padding: 0.65rem 1rem 0.65rem 2.5rem;
+  font-size: 0.9rem;
+  width: 440px;
+  max-width: 90vw;
   transition: border-color var(--transition);
   outline: none;
 }
