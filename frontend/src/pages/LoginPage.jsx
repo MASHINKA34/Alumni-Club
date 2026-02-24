@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { KeyRound, ShieldAlert } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export default function LoginPage() {
@@ -21,7 +22,9 @@ export default function LoginPage() {
   return (
     <div className="login-page">
       <div className="login-card">
-        <div className="login-icon">🔑</div>
+        <div className="login-icon">
+          <KeyRound size={40} color="#6366f1" strokeWidth={1.5} />
+        </div>
         <h1 className="login-title">Вход для администратора</h1>
         <p className="login-subtitle">Только для уполномоченных сотрудников</p>
 
@@ -48,7 +51,12 @@ export default function LoginPage() {
               required
             />
           </div>
-          {error && <p className="form-error">{error}</p>}
+          {error && (
+            <p className="form-error">
+              <ShieldAlert size={13} style={{ display:'inline', marginRight:'5px', verticalAlign:'middle' }} />
+              {error}
+            </p>
+          )}
           <button className="btn btn-primary" type="submit">
             Войти
           </button>

@@ -14,12 +14,14 @@
   --text-primary:  #e8eaf6;
   --text-secondary:#8892b0;
   --text-muted:    #4a5568;
+  --label-color:   #7c8ca8;
   --border:        rgba(255,255,255,0.07);
   --border-focus:  rgba(99,102,241,0.5);
   --radius:        12px;
   --radius-sm:     8px;
   --shadow:        0 4px 24px rgba(0,0,0,0.4);
   --sidebar-width: 240px;
+  --topbar-height: 56px;
   --transition:    0.2s ease;
 }
 
@@ -28,7 +30,7 @@
 html, body, #root { height: 100%; }
 
 body {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   background: var(--bg-primary);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
@@ -49,6 +51,57 @@ img { display: block; }
   flex: 1;
   overflow-y: auto;
   background: var(--bg-primary);
+  min-width: 0;
+}
+
+/* ========= Mobile Topbar ========= */
+.mobile-topbar {
+  display: none;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0 1rem;
+  height: var(--topbar-height);
+  background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.mobile-topbar-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.burger-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  transition: color var(--transition), border-color var(--transition);
+  flex-shrink: 0;
+}
+
+.burger-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--accent);
+}
+
+/* ========= Sidebar Overlay (mobile) ========= */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 199;
+  backdrop-filter: blur(2px);
 }
 
 /* ========= Sidebar ========= */
@@ -61,27 +114,50 @@ img { display: block; }
   flex-direction: column;
   overflow-y: auto;
   overflow-x: hidden;
+  transition: transform var(--transition);
+  z-index: 200;
 }
 
 .sidebar-logo {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 1.5rem 1.25rem;
+  padding: 1.25rem 1rem 1.25rem 1.25rem;
   border-bottom: 1px solid var(--border);
 }
 
 .sidebar-logo-icon {
-  font-size: 1.6rem;
-  line-height: 1;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .sidebar-logo-text {
   font-size: 0.85rem;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text-primary);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
   line-height: 1.2;
+  flex: 1;
+}
+
+/* Кнопка закрытия — только на мобильном */
+.sidebar-close-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition);
+  flex-shrink: 0;
+}
+
+.sidebar-close-btn:hover {
+  color: var(--text-primary);
 }
 
 .sidebar-nav {
@@ -89,15 +165,16 @@ img { display: block; }
   padding: 1rem 0.75rem;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.2rem;
 }
 
 .sidebar-section-label {
   font-size: 0.65rem;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--text-muted);
-  padding: 0.5rem 0.5rem 0.25rem;
+  color: var(--label-color);
+  padding: 0.5rem 0.5rem 0.3rem;
 }
 
 .sidebar-link {
@@ -107,6 +184,7 @@ img { display: block; }
   padding: 0.55rem 0.75rem;
   border-radius: var(--radius-sm);
   font-size: 0.875rem;
+  font-weight: 500;
   color: var(--text-secondary);
   transition: background var(--transition), color var(--transition);
   cursor: pointer;
@@ -128,7 +206,6 @@ img { display: block; }
 }
 
 .sidebar-link-icon {
-  font-size: 1rem;
   flex-shrink: 0;
 }
 
@@ -137,7 +214,7 @@ img { display: block; }
   border-top: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.2rem;
 }
 
 .sidebar-logout-btn {
@@ -147,6 +224,7 @@ img { display: block; }
   padding: 0.55rem 0.75rem;
   border-radius: var(--radius-sm);
   font-size: 0.875rem;
+  font-weight: 500;
   color: var(--danger);
   background: none;
   border: none;
@@ -169,16 +247,16 @@ img { display: block; }
 .page-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: 2rem;
   gap: 1rem;
-  flex-wrap: wrap;
 }
 
 .page-title {
   font-size: 1.75rem;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text-primary);
+  letter-spacing: -0.02em;
 }
 
 .page-subtitle {
@@ -188,14 +266,20 @@ img { display: block; }
 }
 
 /* ========= Search ========= */
-.search-center {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 2rem;
-}
-
 .search-wrap {
   position: relative;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.search-icon {
+  position: absolute;
+  left: 0.75rem;
+  color: var(--text-muted);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
 }
 
 .search-input {
@@ -203,29 +287,21 @@ img { display: block; }
   border: 1px solid var(--border);
   color: var(--text-primary);
   border-radius: var(--radius-sm);
-  padding: 0.65rem 1rem 0.65rem 2.5rem;
-  font-size: 0.9rem;
-  width: 440px;
-  max-width: 90vw;
-  transition: border-color var(--transition);
+  padding: 0.6rem 1rem 0.6rem 2.4rem;
+  font-size: 0.875rem;
+  font-family: inherit;
+  width: 280px;
+  transition: border-color var(--transition), width var(--transition);
   outline: none;
 }
 
 .search-input:focus {
   border-color: var(--border-focus);
+  width: 320px;
 }
 
 .search-input::placeholder {
   color: var(--text-muted);
-}
-
-.search-icon {
-  position: absolute;
-  left: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 0.875rem;
-  pointer-events: none;
 }
 
 /* ========= Group section ========= */
@@ -241,13 +317,14 @@ img { display: block; }
 }
 
 .group-title {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: 700;
   color: var(--text-primary);
 }
 
 .group-count {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
+  font-weight: 600;
   color: var(--text-secondary);
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -298,15 +375,16 @@ img { display: block; }
 .graduate-card-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(99, 102, 241, 0.6);
+  background: rgba(99, 102, 241, 0.65);
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0;
   transition: opacity var(--transition);
   font-size: 0.8rem;
-  font-weight: 600;
+  font-weight: 700;
   color: #fff;
+  letter-spacing: 0.02em;
 }
 
 .graduate-card:hover .graduate-card-overlay {
@@ -322,7 +400,7 @@ img { display: block; }
   font-weight: 600;
   color: var(--text-primary);
   line-height: 1.3;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.2rem;
 }
 
 .graduate-card-meta {
@@ -339,10 +417,6 @@ img { display: block; }
   padding: 4rem;
   color: var(--text-muted);
   font-size: 1rem;
-}
-
-.empty-icon {
-  font-size: 2.5rem;
 }
 
 /* ========= Modal ========= */
@@ -389,9 +463,8 @@ img { display: block; }
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.8rem;
   cursor: pointer;
-  transition: background var(--transition), color var(--transition);
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
   z-index: 1;
 }
 
@@ -425,20 +498,20 @@ img { display: block; }
 
 .modal-name {
   font-size: 1.15rem;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text-primary);
   margin-bottom: 0.5rem;
   line-height: 1.3;
-  padding-right: 2rem;
+  padding-right: 2.5rem;
 }
 
 .modal-group-badge {
   font-size: 0.72rem;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--accent);
   background: var(--accent-light);
   border: 1px solid rgba(99,102,241,0.3);
-  padding: 0.2rem 0.6rem;
+  padding: 0.2rem 0.65rem;
   border-radius: 99px;
 }
 
@@ -460,19 +533,20 @@ img { display: block; }
   padding: 0.75rem;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.3rem;
 }
 
 .modal-info-label {
-  font-size: 0.7rem;
-  color: var(--text-secondary);
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--label-color);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
 }
 
 .modal-info-value {
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-primary);
 }
 
@@ -488,6 +562,8 @@ img { display: block; }
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
 }
 
 .modal-facts-list {
@@ -503,13 +579,13 @@ img { display: block; }
   display: flex;
   align-items: flex-start;
   gap: 0.5rem;
+  line-height: 1.4;
 }
 
-.modal-facts-item::before {
-  content: '→';
+.modal-facts-arrow {
   color: var(--accent);
   flex-shrink: 0;
-  margin-top: 0.05em;
+  margin-top: 0.15em;
 }
 
 /* ========= Login Page ========= */
@@ -533,13 +609,14 @@ img { display: block; }
 }
 
 .login-icon {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.25rem;
 }
 
 .login-title {
   font-size: 1.25rem;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--text-primary);
   margin-bottom: 0.4rem;
 }
@@ -550,7 +627,7 @@ img { display: block; }
   margin-bottom: 1.75rem;
 }
 
-/* ========= Forms (shared) ========= */
+/* ========= Forms ========= */
 .login-form,
 .admin-form {
   display: flex;
@@ -572,9 +649,11 @@ img { display: block; }
 }
 
 .form-label {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--label-color);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .form-input {
@@ -584,6 +663,7 @@ img { display: block; }
   border-radius: var(--radius-sm);
   padding: 0.6rem 0.875rem;
   font-size: 0.875rem;
+  font-family: inherit;
   outline: none;
   transition: border-color var(--transition);
   width: 100%;
@@ -609,6 +689,9 @@ img { display: block; }
   border: 1px solid rgba(239,68,68,0.3);
   border-radius: var(--radius-sm);
   padding: 0.5rem 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
 }
 
 .form-success {
@@ -619,6 +702,9 @@ img { display: block; }
   border-radius: var(--radius-sm);
   padding: 0.5rem 0.75rem;
   margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
 }
 
 .form-actions {
@@ -636,10 +722,11 @@ img { display: block; }
   padding: 0.6rem 1.25rem;
   border-radius: var(--radius-sm);
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 700;
+  font-family: inherit;
   border: none;
   cursor: pointer;
-  transition: background var(--transition), opacity var(--transition);
+  transition: background var(--transition);
 }
 
 .btn-primary {
@@ -664,7 +751,7 @@ img { display: block; }
 }
 
 .btn-danger {
-  background: rgba(239,68,68,0.15);
+  background: rgba(239,68,68,0.12);
   color: var(--danger);
   border: 1px solid rgba(239,68,68,0.3);
 }
@@ -676,7 +763,7 @@ img { display: block; }
 }
 
 .btn-small {
-  padding: 0.3rem 0.5rem;
+  padding: 0.35rem 0.55rem;
   font-size: 0.8rem;
 }
 
@@ -706,6 +793,9 @@ img { display: block; }
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .admin-list-section {
@@ -736,10 +826,11 @@ img { display: block; }
 .admin-table th {
   text-align: left;
   padding: 0.6rem 0.75rem;
-  color: var(--text-secondary);
-  font-size: 0.72rem;
+  color: var(--label-color);
+  font-size: 0.68rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   border-bottom: 1px solid var(--border);
 }
 
@@ -792,15 +883,132 @@ img { display: block; }
 ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
 
-/* ========= Responsive ========= */
+/* ========= MOBILE (≤768px) ========= */
 @media (max-width: 768px) {
+  /* Показываем топбар */
+  .mobile-topbar { display: flex; }
+  .sidebar-overlay { display: block; }
+
+  /* Кнопка закрытия в сайдбаре */
+  .sidebar-close-btn { display: flex; }
+
+  /* Сайдбар — фиксированный drawer */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    z-index: 200;
+  }
+
+  .sidebar--open {
+    transform: translateX(0);
+  }
+
+  /* Основной контент */
+  .app-main {
+    overflow-y: auto;
+  }
+
+  /* Страница */
+  .page {
+    padding: 1.25rem 1rem;
+  }
+
+  /* Заголовок — стекуем на мобильном */
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .page-title {
+    font-size: 1.4rem;
+  }
+
+  /* Поиск на всю ширину на мобильном */
+  .search-wrap { width: 100%; }
+  .search-input { width: 100%; }
+  .search-input:focus { width: 100%; }
+
+  /* Сетка карточек */
+  .graduates-grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 0.75rem;
+  }
+
+  /* Модалка */
+  .modal {
+    max-height: 95vh;
+    margin: 0;
+  }
+
+  .modal-header {
+    padding: 1.25rem 1rem 0.75rem;
+    gap: 1rem;
+  }
+
+  .modal-photo {
+    width: 70px;
+    height: 70px;
+  }
+
+  .modal-name {
+    font-size: 1rem;
+  }
+
+  .modal-body {
+    padding: 1rem;
+  }
+
+  .modal-info-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  /* Форма admin */
   .admin-layout {
     grid-template-columns: 1fr;
   }
+
   .admin-form-card {
     position: static;
   }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  /* Таблица admin — скроллируемая */
+  .admin-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Login */
+  .login-page {
+    align-items: flex-start;
+    padding-top: 3rem;
+  }
+}
+
+/* ========= SMALL PHONES (≤480px) ========= */
+@media (max-width: 480px) {
   .graduates-grid {
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .modal-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-info-item[style] {
+    grid-column: auto !important;
+  }
+
+  .page-title {
+    font-size: 1.25rem;
   }
 }

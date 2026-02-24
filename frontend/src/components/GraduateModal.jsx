@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { X, Calendar, User, Venus, Mars, Briefcase, Zap, ArrowRight } from 'lucide-react';
 
 export default function GraduateModal({ graduate, onClose }) {
   useEffect(() => {
@@ -15,12 +16,14 @@ export default function GraduateModal({ graduate, onClose }) {
 
   if (!graduate) return null;
 
-  const genderIcon = graduate.gender === 'Женский' ? '♀️' : '♂️';
+  const GenderIcon = graduate.gender === 'Женский' ? Venus : Mars;
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose}>✕</button>
+        <button className="modal-close" onClick={onClose}>
+          <X size={14} />
+        </button>
 
         <div className="modal-header">
           <img
@@ -40,24 +43,37 @@ export default function GraduateModal({ graduate, onClose }) {
         <div className="modal-body">
           <div className="modal-info-grid">
             <div className="modal-info-item">
-              <span className="modal-info-label">📅 Годы обучения</span>
+              <span className="modal-info-label">
+                <Calendar size={12} style={{ display:'inline', marginRight:'4px', verticalAlign:'middle' }} />
+                Годы обучения
+              </span>
               <span className="modal-info-value">{graduate.years}</span>
             </div>
             <div className="modal-info-item">
-              <span className="modal-info-label">{genderIcon} Пол</span>
+              <span className="modal-info-label">
+                <GenderIcon size={12} style={{ display:'inline', marginRight:'4px', verticalAlign:'middle' }} />
+                Пол
+              </span>
               <span className="modal-info-value">{graduate.gender}</span>
             </div>
             <div className="modal-info-item" style={{ gridColumn: '1 / -1' }}>
-              <span className="modal-info-label">💼 Текущее место работы</span>
+              <span className="modal-info-label">
+                <Briefcase size={12} style={{ display:'inline', marginRight:'4px', verticalAlign:'middle' }} />
+                Текущее место работы
+              </span>
               <span className="modal-info-value">{graduate.job}</span>
             </div>
           </div>
 
           <div className="modal-facts">
-            <h3 className="modal-facts-title">⚡ Интересные факты</h3>
+            <h3 className="modal-facts-title">
+              <Zap size={14} style={{ display:'inline', marginRight:'6px', verticalAlign:'middle', color:'#f59e0b' }} />
+              Интересные факты
+            </h3>
             <ul className="modal-facts-list">
               {graduate.facts.map((fact, i) => (
                 <li key={i} className="modal-facts-item">
+                  <ArrowRight size={13} className="modal-facts-arrow" />
                   {fact}
                 </li>
               ))}

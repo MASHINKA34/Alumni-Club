@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { Search, SearchX } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { groups } from '../data/graduates';
 import GraduateCard from '../components/GraduateCard';
@@ -39,10 +40,9 @@ export default function HomePage() {
               : 'Все выпускники нашего университета'}
           </p>
         </div>
-      </div>
 
-      <div className="search-center">
         <div className="search-wrap">
+          <Search size={15} className="search-icon" />
           <input
             className="search-input"
             type="text"
@@ -50,7 +50,6 @@ export default function HomePage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <span className="search-icon">🔍</span>
         </div>
       </div>
 
@@ -78,7 +77,7 @@ export default function HomePage() {
 
       {filtered.length === 0 && (
         <div className="empty-state">
-          <span className="empty-icon">🔎</span>
+          <SearchX size={48} strokeWidth={1.5} />
           <p>Выпускники не найдены</p>
         </div>
       )}

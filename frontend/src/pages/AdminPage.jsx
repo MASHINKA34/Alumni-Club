@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
+import { LayoutDashboard, UserPlus, UserCog, Pencil, Trash2, CheckCircle2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { groups } from '../data/graduates';
 
@@ -85,18 +86,28 @@ export default function AdminPage() {
     <div className="page admin-page">
       <div className="page-header">
         <div>
-          <h1 className="page-title">⚙️ Панель администратора</h1>
+          <h1 className="page-title" style={{ display:'flex', alignItems:'center', gap:'0.5rem' }}>
+            <LayoutDashboard size={24} color="#6366f1" />
+            Панель администратора
+          </h1>
           <p className="page-subtitle">Управление базой выпускников</p>
         </div>
       </div>
 
       <div className="admin-layout">
-        {/* ФОРМА */}
         <div className="admin-form-card">
-          <h2 className="admin-form-title">
-            {editId !== null ? '✏️ Редактировать выпускника' : '➕ Добавить выпускника'}
+          <h2 className="admin-form-title" style={{ display:'flex', alignItems:'center', gap:'0.5rem' }}>
+            {editId !== null
+              ? <><UserCog size={18} color="#6366f1" /> Редактировать выпускника</>
+              : <><UserPlus size={18} color="#6366f1" /> Добавить выпускника</>
+            }
           </h2>
-          {success && <div className="form-success">{success}</div>}
+          {success && (
+            <div className="form-success">
+              <CheckCircle2 size={13} style={{ display:'inline', marginRight:'5px', verticalAlign:'middle' }} />
+              {success}
+            </div>
+          )}
           <form className="admin-form" onSubmit={handleSubmit}>
             <div className="form-group">
               <label className="form-label">ФИО *</label>
@@ -197,7 +208,6 @@ export default function AdminPage() {
           </form>
         </div>
 
-        {/* СПИСОК */}
         <div className="admin-list-section">
           <div className="admin-list-header">
             <h2 className="admin-form-title">Список выпускников</h2>
@@ -246,14 +256,16 @@ export default function AdminPage() {
                         <button
                           className="btn btn-small btn-secondary"
                           onClick={() => handleEdit(grad)}
+                          title="Редактировать"
                         >
-                          ✏️
+                          <Pencil size={14} />
                         </button>
                         <button
                           className="btn btn-small btn-danger"
                           onClick={() => handleDelete(grad.id)}
+                          title="Удалить"
                         >
-                          🗑️
+                          <Trash2 size={14} />
                         </button>
                       </div>
                     </td>
