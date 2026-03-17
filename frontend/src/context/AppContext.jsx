@@ -1,47 +1,169 @@
-import { createContext, useContext, useState } from 'react';
-import { graduates as initialGraduates } from '../data/graduates';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 const AppContext = createContext(null);
 
-export function AppProvider({ children }) {
-  const [graduates, setGraduates] = useState(initialGraduates);
-  const [isAdmin, setIsAdmin] = useState(
-    () => localStorage.getItem('isAdmin') === 'true'
-  );
+const API = '/api';
 
-  function login(login, password) {
-    if (login === 'admin' && password === 'admin') {
-      setIsAdmin(true);
-      localStorage.setItem('isAdmin', 'true');
-      return true;
+export function AppProvider({ children }) {
+  const [graduates, setGraduates] = useState([]);
+  const [groups, setGroups] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('user')); } catch { return null; }
+  });
+
+  const isAdmin = user?.role === 'admin';
+  const isMember = user?.role === 'member';
+  const token = localStorage.getItem('token');
+
+  const authHeaders = useCallback(() => ({
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  }), [token]);
+
+  async function fetchAll() {
+    setLoading(true);
+    try {
+      const [gradsRes, groupsRes] = await Promise.all([
+        fetch(`${API}/graduates`),
+        fetch(`${API}/groups`),
+      ]);
+      setGraduates(await gradsRes.json());
+      setGroups(await groupsRes.json());
+    } catch (err) {
+      console.error('Ошибка загрузки данных:', err);
+    } finally {
+      setLoading(false);
     }
-    return false;
+  }
+
+  useEffect(() => { fetchAll(); }, []);
+
+  async function login(login, password) {
+    const res = await fetch(`${API}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ login, password }),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Неверный логин или пароль');
+    }
+    const data = await res.json();
+    localStorage.setItem('token', data.token);
+    const userData = { role: data.role, graduateId: data.graduateId, login: data.login };
+    localStorage.setItem('user', JSON.stringify(userData));
+    setUser(userData);
+    return data.role;
   }
 
   function logout() {
-    setIsAdmin(false);
-    localStorage.removeItem('isAdmin');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
   }
 
-  function addGraduate(grad) {
-    const newGrad = { ...grad, id: Date.now() };
+  async function addGraduate(grad) {
+    const res = await fetch(`${API}/graduates`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify(grad),
+    });
+    if (!res.ok) throw new Error('Ошибка добавления');
+    const newGrad = await res.json();
     setGraduates((prev) => [...prev, newGrad]);
+    return newGrad;
   }
 
-  function updateGraduate(id, data) {
-    setGraduates((prev) =>
-      prev.map((g) => (g.id === id ? { ...g, ...data } : g))
-    );
+  async function updateGraduate(id, data) {
+    const res = await fetch(`${API}/graduates/${id}`, {
+      method: 'PUT',
+      headers: authHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error('Ошибка обновления');
+    const updated = await res.json();
+    setGraduates((prev) => prev.map((g) => (g.id === id ? updated : g)));
+    return updated;
   }
 
-  function deleteGraduate(id) {
+  async function deleteGraduate(id) {
+    const res = await fetch(`${API}/graduates/${id}`, {
+      method: 'DELETE',
+      headers: authHeaders(),
+    });
+    if (!res.ok) throw new Error('Ошибка удаления');
     setGraduates((prev) => prev.filter((g) => g.id !== id));
   }
 
+  async function addGroup(name) {
+    const res = await fetch(`${API}/groups`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify({ name }),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Ошибка добавления группы');
+    }
+    const newGroups = await res.json();
+    setGroups(newGroups);
+  }
+
+  async function deleteGroup(name) {
+    const res = await fetch(`${API}/groups/${encodeURIComponent(name)}`, {
+      method: 'DELETE',
+      headers: authHeaders(),
+    });
+    if (!res.ok) throw new Error('Ошибка удаления группы');
+    setGroups((prev) => prev.filter((g) => g !== name));
+  }
+
+  async function submitRegisterRequest(data) {
+    const res = await fetch(`${API}/requests/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error('Ошибка отправки заявки');
+  }
+
+  async function submitEditRequest(data) {
+    const res = await fetch(`${API}/requests/edit`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error('Ошибка отправки заявки');
+  }
+
+  async function fetchRequests() {
+    const res = await fetch(`${API}/requests`, { headers: authHeaders() });
+    if (!res.ok) throw new Error('Ошибка загрузки заявок');
+    return res.json();
+  }
+
+  async function resolveRequest(id, status) {
+    const res = await fetch(`${API}/requests/${id}`, {
+      method: 'PUT',
+      headers: authHeaders(),
+      body: JSON.stringify({ status }),
+    });
+    if (!res.ok) throw new Error('Ошибка обработки заявки');
+    await fetchAll();
+    return res.json();
+  }
+
   return (
-    <AppContext.Provider
-      value={{ graduates, isAdmin, login, logout, addGraduate, updateGraduate, deleteGraduate }}
-    >
+    <AppContext.Provider value={{
+      graduates, groups, loading, user, isAdmin, isMember,
+      login, logout,
+      addGraduate, updateGraduate, deleteGraduate,
+      addGroup, deleteGroup,
+      submitRegisterRequest, submitEditRequest,
+      fetchRequests, resolveRequest,
+      refetch: fetchAll,
+    }}>
       {children}
     </AppContext.Provider>
   );

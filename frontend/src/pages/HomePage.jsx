@@ -1,90 +1,71 @@
-import { useState, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Search, SearchX } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Users, GraduationCap, ArrowRight, ClipboardList } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { groups } from '../data/graduates';
-import GraduateCard from '../components/GraduateCard';
-import GraduateModal from '../components/GraduateModal';
 
 export default function HomePage() {
-  const { graduates } = useApp();
-  const [searchParams] = useSearchParams();
-  const [selected, setSelected] = useState(null);
-  const [search, setSearch] = useState('');
+  const { graduates, groups, loading } = useApp();
 
-  const filterGroup = searchParams.get('group');
-
-  const filtered = useMemo(() => {
-    return graduates.filter((g) => {
-      const matchGroup = filterGroup ? g.group === filterGroup : true;
-      const matchSearch = search
-        ? g.name.toLowerCase().includes(search.toLowerCase()) ||
-          g.group.toLowerCase().includes(search.toLowerCase())
-        : true;
-      return matchGroup && matchSearch;
-    });
-  }, [graduates, filterGroup, search]);
-
-  const groupsToShow = filterGroup ? [filterGroup] : groups;
+  const stats = [
+    { label: 'Выпускников', value: loading ? '...' : graduates.length, icon: GraduationCap },
+    { label: 'Учебных групп', value: loading ? '...' : groups.length, icon: Users },
+  ];
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">
-            {filterGroup ? `Группа ${filterGroup}` : 'Клуб Выпускников'}
-          </h1>
-          <p className="page-subtitle">
-            {filterGroup
-              ? `Выпускники группы ${filterGroup}`
-              : 'Все выпускники нашего университета'}
-          </p>
-        </div>
-
-        <div className="search-wrap">
-          <Search size={15} className="search-icon" />
-          <input
-            className="search-input"
-            type="text"
-            placeholder="Поиск по имени или группе..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+    <div className="home-page">
+      <section className="home-hero">
+        <div className="home-hero-emblem">
+          <img
+            src="/volgu-emblem.png"
+            alt="Герб ВФ ВолГУ"
+            className="home-emblem-img"
           />
         </div>
-      </div>
-
-      {groupsToShow.map((group) => {
-        const groupGrads = filtered.filter((g) => g.group === group);
-        if (groupGrads.length === 0) return null;
-        return (
-          <section key={group} className="group-section">
-            <div className="group-header">
-              <h2 className="group-title">{group}</h2>
-              <span className="group-count">{groupGrads.length} чел.</span>
-            </div>
-            <div className="graduates-grid">
-              {groupGrads.map((grad) => (
-                <GraduateCard
-                  key={grad.id}
-                  graduate={grad}
-                  onClick={setSelected}
-                />
-              ))}
-            </div>
-          </section>
-        );
-      })}
-
-      {filtered.length === 0 && (
-        <div className="empty-state">
-          <SearchX size={48} strokeWidth={1.5} />
-          <p>Выпускники не найдены</p>
+        <div className="home-hero-text">
+          <h1 className="home-hero-title">Клуб Выпускников</h1>
+          <p className="home-hero-subtitle">
+            Волгоградский государственный университет
+          </p>
+          <p className="home-hero-desc">
+            Площадка для общения и поддержки связи выпускников нашего университета.
+            Здесь собраны истории, достижения и контакты тех, кто прошёл путь от студента до профессионала.
+          </p>
+          <div className="home-hero-actions">
+            <Link to="/graduates" className="btn btn-primary home-btn-main">
+              Смотреть выпускников
+              <ArrowRight size={16} />
+            </Link>
+            <Link to="/request/register" className="btn btn-secondary home-btn-secondary">
+              <ClipboardList size={16} />
+              Подать заявку на регистрацию
+            </Link>
+          </div>
         </div>
-      )}
+      </section>
 
-      {selected && (
-        <GraduateModal graduate={selected} onClose={() => setSelected(null)} />
-      )}
+      <section className="home-stats">
+        {stats.map(({ label, value, icon: Icon }) => (
+          <div key={label} className="home-stat-card">
+            <Icon size={28} color="#6366f1" strokeWidth={1.5} />
+            <div className="home-stat-value">{value}</div>
+            <div className="home-stat-label">{label}</div>
+          </div>
+        ))}
+      </section>
+
+      <section className="home-about">
+        <h2 className="home-about-title">О клубе</h2>
+        <p className="home-about-text">
+          Клуб выпускников — это сообщество людей, объединённых общей альма-матер.
+          Мы сохраняем память об учёбе, следим за карьерными успехами друг друга
+          и поддерживаем профессиональные связи между поколениями выпускников.
+        </p>
+        <p className="home-about-text">
+          Если вы выпускник нашего университета и хотите быть в базе клуба —
+          подайте заявку на регистрацию. Если вы уже зарегистрированы и хотите
+          обновить информацию о себе — войдите в аккаунт и подайте заявку на
+          редактирование данных.
+        </p>
+      </section>
     </div>
   );
 }

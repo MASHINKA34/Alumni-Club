@@ -4,8 +4,11 @@ import { Menu } from 'lucide-react';
 import { AppProvider } from './context/AppContext';
 import Sidebar from './components/Sidebar';
 import HomePage from './pages/HomePage';
+import GraduatesPage from './pages/GraduatesPage';
 import LoginPage from './pages/LoginPage';
 import AdminPage from './pages/AdminPage';
+import RegisterRequestPage from './pages/RegisterRequestPage';
+import EditRequestPage from './pages/EditRequestPage';
 
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -14,7 +17,6 @@ export default function App() {
     <AppProvider>
       <BrowserRouter>
         <div className="app-layout">
-          {/* Оверлей для мобильного сайдбара */}
           {sidebarOpen && (
             <div
               className="sidebar-overlay"
@@ -25,7 +27,6 @@ export default function App() {
           <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
           <main className="app-main">
-            {/* Мобильный топбар с бургер-кнопкой */}
             <div className="mobile-topbar">
               <button
                 className="burger-btn"
@@ -39,8 +40,11 @@ export default function App() {
 
             <Routes>
               <Route path="/" element={<HomePage />} />
+              <Route path="/graduates" element={<GraduatesPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/admin" element={<AdminPage />} />
+              <Route path="/request/register" element={<RegisterRequestPage />} />
+              <Route path="/request/edit" element={<EditRequestPage />} />
             </Routes>
           </main>
         </div>

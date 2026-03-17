@@ -1,10 +1,9 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Award, Home, Users, Settings, LogOut, LogIn, X } from 'lucide-react';
+import { Award, Home, Users, Settings, LogOut, LogIn, X, ClipboardList, FilePen, GraduationCap } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { groups } from '../data/graduates';
 
 export default function Sidebar({ isOpen, onClose }) {
-  const { isAdmin, logout } = useApp();
+  const { isAdmin, isMember, user, logout, groups } = useApp();
   const navigate = useNavigate();
 
   function handleLogout() {
@@ -42,22 +41,73 @@ export default function Sidebar({ isOpen, onClose }) {
           Главная
         </NavLink>
 
-        <p className="sidebar-section-label" style={{ marginTop: '1.25rem' }}>Группы</p>
-        {groups.map((group) => (
-          <NavLink
-            key={group}
-            to={`/?group=${encodeURIComponent(group)}`}
-            className="sidebar-link"
-            onClick={handleNavClick}
-          >
-            <Users size={16} className="sidebar-link-icon" />
-            {group}
-          </NavLink>
-        ))}
+        <NavLink
+          to="/graduates"
+          className={({ isActive }) => 'sidebar-link' + (isActive ? ' active' : '')}
+          onClick={handleNavClick}
+        >
+          <GraduationCap size={16} className="sidebar-link-icon" />
+          Все выпускники
+        </NavLink>
+
+        {groups.length > 0 && (
+          <>
+            <p className="sidebar-section-label" style={{ marginTop: '1.25rem' }}>Группы</p>
+            {groups.map((group) => (
+              <NavLink
+                key={group}
+                to={`/graduates?group=${encodeURIComponent(group)}`}
+                className="sidebar-link"
+                onClick={handleNavClick}
+              >
+                <Users size={16} className="sidebar-link-icon" />
+                {group}
+              </NavLink>
+            ))}
+          </>
+        )}
       </nav>
 
       <div className="sidebar-footer">
-        {isAdmin ? (
+        {!user && (
+          <>
+            <NavLink
+              to="/request/register"
+              className={({ isActive }) => 'sidebar-link sidebar-link--request' + (isActive ? ' active' : '')}
+              onClick={handleNavClick}
+            >
+              <ClipboardList size={16} className="sidebar-link-icon" />
+              Подать заявку на регистрацию
+            </NavLink>
+            <NavLink
+              to="/login"
+              className={({ isActive }) => 'sidebar-link' + (isActive ? ' active' : '')}
+              onClick={handleNavClick}
+            >
+              <LogIn size={16} className="sidebar-link-icon" />
+              Войти
+            </NavLink>
+          </>
+        )}
+
+        {isMember && !isAdmin && (
+          <>
+            <NavLink
+              to="/request/edit"
+              className={({ isActive }) => 'sidebar-link sidebar-link--request' + (isActive ? ' active' : '')}
+              onClick={handleNavClick}
+            >
+              <FilePen size={16} className="sidebar-link-icon" />
+              Подать заявку на редактирование данных
+            </NavLink>
+            <button className="sidebar-logout-btn" onClick={handleLogout}>
+              <LogOut size={16} className="sidebar-link-icon" />
+              Выйти ({user?.login})
+            </button>
+          </>
+        )}
+
+        {isAdmin && (
           <>
             <NavLink
               to="/admin"
@@ -72,15 +122,6 @@ export default function Sidebar({ isOpen, onClose }) {
               Выйти
             </button>
           </>
-        ) : (
-          <NavLink
-            to="/login"
-            className={({ isActive }) => 'sidebar-link' + (isActive ? ' active' : '')}
-            onClick={handleNavClick}
-          >
-            <LogIn size={16} className="sidebar-link-icon" />
-            Войти (Admin)
-          </NavLink>
         )}
       </div>
     </aside>

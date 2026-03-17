@@ -1,0 +1,38 @@
+[
+  {
+    "id": 1773784965642,
+    "type": "registration",
+    "status": "pending",
+    "createdAt": "2026-03-17T22:02:45.642Z",
+    "name": "авафвафывафывафывафыв",
+    "group": "ПМИ-202",
+    "graduationYear": 2026,
+    "job": "афыва",
+    "gender": "Мужской",
+    "photoConsent": true,
+    "facts": [
+      "фыва",
+      "фыв"
+    ],
+    "message": "фывафыва"
+  },
+  {
+    "id": 1773785023421,
+    "type": "registration",
+    "status": "rejected",
+    "createdAt": "2026-03-17T22:03:43.421Z",
+    "name": "выфафывафывава",
+    "group": "ИСП-201",
+    "graduationYear": 2026,
+    "job": "ываываы",
+    "gender": "Мужской",
+    "photoConsent": true,
+    "facts": [
+      "ваыв",
+      "аыва",
+      "ыва"
+    ],
+    "message": "ываыаыва",
+    "resolvedAt": "2026-03-17T22:04:06.865Z"
+  }
+]
