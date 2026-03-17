@@ -15,7 +15,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = 3001;
 
-app.use(cors({ origin: ['http://localhost:5173', 'http://localhost:4173'] }));
+app.use(cors());
 app.use(express.json());
 app.use('/images', express.static(path.join(__dirname, 'public/images')));
 
