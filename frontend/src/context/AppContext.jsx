@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 
 const AppContext = createContext(null);
 
-const API = '/api';
+const API = import.meta.env.VITE_API_URL || '/api';
 
 export function AppProvider({ children }) {
   const [graduates, setGraduates] = useState([]);
