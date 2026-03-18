@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Award, Home, Users, Settings, LogOut, LogIn, X, ClipboardList, FilePen, GraduationCap } from 'lucide-react';
+import { Award, Home, Users, Settings, LogOut, LogIn, X, ClipboardList, FilePen, GraduationCap, UserCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export default function Sidebar({ isOpen, onClose }) {
@@ -92,6 +92,14 @@ export default function Sidebar({ isOpen, onClose }) {
 
         {isMember && !isAdmin && (
           <>
+            <NavLink
+              to="/profile"
+              className={({ isActive }) => 'sidebar-link' + (isActive ? ' active' : '')}
+              onClick={handleNavClick}
+            >
+              <UserCircle size={16} className="sidebar-link-icon" />
+              Мой профиль
+            </NavLink>
             <NavLink
               to="/request/edit"
               className={({ isActive }) => 'sidebar-link sidebar-link--request' + (isActive ? ' active' : '')}

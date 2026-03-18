@@ -13,6 +13,7 @@ export default function RegisterRequestPage() {
     photoConsent: false,
     facts: ['', '', ''],
     message: '',
+    password: '',
   });
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
@@ -167,6 +168,21 @@ export default function RegisterRequestPage() {
               />
               Даю согласие на публикацию фотографии
             </label>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Пароль для входа *</label>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+              После одобрения заявки вы сможете войти в личный кабинет. Логин — ваше ФИО.
+            </p>
+            <input
+              className="form-input"
+              type="password"
+              placeholder="Придумайте пароль"
+              value={form.password}
+              onChange={(e) => handleChange('password', e.target.value)}
+              required
+            />
           </div>
 
           <div className="form-group">

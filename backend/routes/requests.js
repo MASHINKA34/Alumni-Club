@@ -1,4 +1,5 @@
 import express from 'express';
+import bcrypt from 'bcryptjs';
 import { readData, writeData } from '../utils/data.js';
 import { authenticate, requireAdmin } from '../middleware/auth.js';
 
@@ -42,7 +43,7 @@ router.get('/', authenticate, requireAdmin, (_req, res) => {
 });
 
 // Одобрить/отклонить заявку (только admin)
-router.put('/:id', authenticate, requireAdmin, (req, res) => {
+router.put('/:id', authenticate, requireAdmin, async (req, res) => {
   const requests = readData('requests.json');
   const idx = requests.findIndex((r) => r.id === Number(req.params.id));
   if (idx === -1) return res.status(404).json({ error: 'Заявка не найдена' });
@@ -68,15 +69,41 @@ router.put('/:id', authenticate, requireAdmin, (req, res) => {
       graduates.push(newGrad);
       writeData('graduates.json', graduates);
       requests[idx].graduateId = newGrad.id;
+
+      // Создать аккаунт пользователя: логин = ФИО, пароль из заявки
+      const reqLogin = requests[idx].name;
+      const reqPassword = requests[idx].password;
+      if (reqLogin && reqPassword) {
+        const users = readData('users.json');
+        const hashedPassword = await bcrypt.hash(reqPassword, 10);
+        users.push({
+          id: Date.now() + 1,
+          login: reqLogin,
+          password: hashedPassword,
+          role: 'member',
+          graduateId: newGrad.id,
+        });
+        writeData('users.json', users);
+      }
     }
 
     if (requests[idx].type === 'edit' && requests[idx].graduateId) {
       const graduates = readData('graduates.json');
       const gIdx = graduates.findIndex((g) => g.id === requests[idx].graduateId);
       if (gIdx !== -1) {
-        const { id, type, status: _s, createdAt, submittedBy, resolvedAt, ...changes } = requests[idx];
+        const { id, type, status: _s, createdAt, submittedBy, resolvedAt, password, login, ...changes } = requests[idx];
         graduates[gIdx] = { ...graduates[gIdx], ...changes };
         writeData('graduates.json', graduates);
+
+        // Если имя изменилось — обновляем логин пользователя
+        if (changes.name) {
+          const users = readData('users.json');
+          const uIdx = users.findIndex((u) => u.graduateId === requests[idx].graduateId);
+          if (uIdx !== -1) {
+            users[uIdx].login = changes.name;
+            writeData('users.json', users);
+          }
+        }
       }
     }
   }

@@ -19,7 +19,7 @@ export default function LoginPage() {
       if (role === 'admin') {
         navigate('/admin');
       } else {
-        navigate('/');
+        navigate('/profile');
       }
     } catch (err) {
       setError(err.message || 'Неверный логин или пароль');
@@ -43,7 +43,7 @@ export default function LoginPage() {
             <input
               className="form-input"
               type="text"
-              placeholder="Введите логин"
+              placeholder="Иванов Иван Иванович"
               value={form.login}
               onChange={(e) => setForm({ ...form, login: e.target.value })}
               required

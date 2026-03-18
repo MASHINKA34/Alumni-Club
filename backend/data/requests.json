@@ -2,7 +2,7 @@
   {
     "id": 1773784965642,
     "type": "registration",
-    "status": "pending",
+    "status": "rejected",
     "createdAt": "2026-03-17T22:02:45.642Z",
     "name": "авафвафывафывафывафыв",
     "group": "ПМИ-202",
@@ -14,7 +14,8 @@
       "фыва",
       "фыв"
     ],
-    "message": "фывафыва"
+    "message": "фывафыва",
+    "resolvedAt": "2026-03-18T09:29:16.226Z"
   },
   {
     "id": 1773785023421,
@@ -34,5 +35,67 @@
     ],
     "message": "ываыаыва",
     "resolvedAt": "2026-03-17T22:04:06.865Z"
+  },
+  {
+    "id": 1773825184408,
+    "type": "registration",
+    "status": "rejected",
+    "createdAt": "2026-03-18T09:13:04.408Z",
+    "name": "Нигга",
+    "group": "ПМИ-201",
+    "graduationYear": 2026,
+    "job": "фывф",
+    "gender": "Мужской",
+    "photoConsent": true,
+    "facts": [
+      "вфыв",
+      "вфы",
+      "фывыф"
+    ],
+    "message": "вфывфывфывф",
+    "password": "МОйОгромныйпенис",
+    "resolvedAt": "2026-03-18T09:29:15.913Z"
+  },
+  {
+    "id": 1773825432954,
+    "type": "registration",
+    "status": "approved",
+    "createdAt": "2026-03-18T09:17:12.954Z",
+    "name": "Огромный",
+    "group": "ПМИ-202",
+    "graduationYear": 2026,
+    "job": "афываф",
+    "gender": "Мужской",
+    "photoConsent": true,
+    "facts": [
+      "ывафы",
+      "афы",
+      "афыа"
+    ],
+    "message": "Хм",
+    "password": "ПЕНИС",
+    "resolvedAt": "2026-03-18T09:27:05.605Z",
+    "graduateId": 1773826025605
+  },
+  {
+    "id": 1773826139254,
+    "type": "edit",
+    "status": "approved",
+    "createdAt": "2026-03-18T09:28:59.254Z",
+    "submittedBy": 1773826025661,
+    "graduateId": 1773826025605,
+    "name": "Гигант",
+    "group": "ПМИ-202",
+    "graduationYear": 2026,
+    "job": "нннннн",
+    "gender": "Мужской",
+    "photoConsent": true,
+    "facts": [
+      "СЧВААВА",
+      "афы",
+      "афыа"
+    ],
+    "message": "",
+    "resolvedAt": "2026-03-18T09:29:11.940Z"
   }
 ]

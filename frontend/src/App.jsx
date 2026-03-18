@@ -9,6 +9,7 @@ import LoginPage from './pages/LoginPage';
 import AdminPage from './pages/AdminPage';
 import RegisterRequestPage from './pages/RegisterRequestPage';
 import EditRequestPage from './pages/EditRequestPage';
+import ProfilePage from './pages/ProfilePage';
 
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -43,6 +44,7 @@ export default function App() {
               <Route path="/graduates" element={<GraduatesPage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/admin" element={<AdminPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
               <Route path="/request/register" element={<RegisterRequestPage />} />
               <Route path="/request/edit" element={<EditRequestPage />} />
             </Routes>

@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom';
-import { Users, GraduationCap, ArrowRight, ClipboardList } from 'lucide-react';
+import { Users, GraduationCap, ArrowRight, ClipboardList, FilePen } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export default function HomePage() {
-  const { graduates, groups, loading } = useApp();
+  const { graduates, groups, loading, isMember, isAdmin } = useApp();
 
   const stats = [
     { label: 'Выпускников', value: loading ? '...' : graduates.length, icon: GraduationCap },
@@ -34,10 +34,17 @@ export default function HomePage() {
               Смотреть выпускников
               <ArrowRight size={16} />
             </Link>
-            <Link to="/request/register" className="btn btn-secondary home-btn-secondary">
-              <ClipboardList size={16} />
-              Подать заявку на регистрацию
-            </Link>
+            {isMember && !isAdmin ? (
+              <Link to="/request/edit" className="btn btn-secondary home-btn-secondary">
+                <FilePen size={16} />
+                Подать заявку на изменение данных
+              </Link>
+            ) : !isAdmin && (
+              <Link to="/request/register" className="btn btn-secondary home-btn-secondary">
+                <ClipboardList size={16} />
+                Подать заявку на регистрацию
+              </Link>
+            )}
           </div>
         </div>
       </section>

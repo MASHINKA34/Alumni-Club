@@ -15,6 +15,8 @@ const emptyForm = {
   job: '',
   gender: 'Мужской',
   facts: ['', '', ''],
+  userLogin: '',
+  password: '',
 };
 
 export default function AdminPage() {
@@ -33,6 +35,10 @@ export default function AdminPage() {
   const [newGroupName, setNewGroupName] = useState('');
   const [requests, setRequests] = useState([]);
   const [requestsLoading, setRequestsLoading] = useState(false);
+
+  useEffect(() => {
+    if (isAdmin && tab === 'requests') loadRequests();
+  }, [tab, isAdmin]);
 
   if (!isAdmin) return <Navigate to="/login" replace />;
 
@@ -86,6 +92,8 @@ export default function AdminPage() {
       job: grad.job || '',
       gender: grad.gender || 'Мужской',
       facts: [...(grad.facts || []), '', '', ''].slice(0, 3),
+      userLogin: grad.userLogin || '',
+      password: '',
     });
     setTab('graduates');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -132,7 +140,7 @@ export default function AdminPage() {
     setRequestsLoading(true);
     try {
       const data = await fetchRequests();
-      setRequests(data);
+      setRequests([...data].sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
     } catch (err) {
       console.error(err);
     } finally {
@@ -140,9 +148,6 @@ export default function AdminPage() {
     }
   }
 
-  useEffect(() => {
-    if (tab === 'requests') loadRequests();
-  }, [tab]);
 
   async function handleResolve(id, status) {
     try {
@@ -298,6 +303,34 @@ export default function AdminPage() {
                   />
                   Согласие на публикацию фото
                 </label>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Аккаунт выпускника</label>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="form-label">Логин</label>
+                    <input
+                      className="form-input"
+                      type="text"
+                      placeholder="ivan.ivanov"
+                      value={form.userLogin}
+                      onChange={(e) => handleFormChange('userLogin', e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">
+                      Пароль{editId !== null ? ' (оставьте пустым, чтобы не менять)' : ''}
+                    </label>
+                    <input
+                      className="form-input"
+                      type="password"
+                      placeholder={editId !== null ? 'Новый пароль...' : 'Пароль для входа'}
+                      value={form.password}
+                      onChange={(e) => handleFormChange('password', e.target.value)}
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="form-group">
@@ -500,6 +533,7 @@ export default function AdminPage() {
                 {req.facts && req.facts.length > 0 && (
                   <p><strong>Прочее:</strong> {req.facts.join('; ')}</p>
                 )}
+                {req.password && <p><strong>Пароль:</strong> {req.password}</p>}
                 {req.message && <p><strong>Сообщение:</strong> {req.message}</p>}
               </div>
             </div>

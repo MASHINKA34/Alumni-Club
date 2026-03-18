@@ -6,7 +6,7 @@ import GraduateCard from '../components/GraduateCard';
 import GraduateModal from '../components/GraduateModal';
 
 export default function GraduatesPage() {
-  const { graduates, groups, loading } = useApp();
+  const { graduates, groups, loading, user } = useApp();
   const [searchParams] = useSearchParams();
   const [selected, setSelected] = useState(null);
   const [search, setSearch] = useState('');
@@ -86,7 +86,10 @@ export default function GraduatesPage() {
       )}
 
       {selected && (
-        <GraduateModal graduate={selected} onClose={() => setSelected(null)} />
+        <GraduateModal
+          graduate={selected}
+          onClose={() => setSelected(null)}
+        />
       )}
     </div>
   );

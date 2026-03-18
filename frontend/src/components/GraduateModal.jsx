@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
-import { X, Calendar, Briefcase, BookOpen, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { X, Calendar, Briefcase, BookOpen, ArrowRight, FilePen } from 'lucide-react';
+import { useApp } from '../context/AppContext';
 
 const MALE_AVATAR = (
   <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
@@ -27,6 +29,9 @@ const FEMALE_AVATAR = (
 );
 
 export default function GraduateModal({ graduate, onClose }) {
+  const navigate = useNavigate();
+  const { isAdmin } = useApp();
+
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape') onClose(); }
     document.addEventListener('keydown', onKey);
@@ -106,6 +111,19 @@ export default function GraduateModal({ graduate, onClose }) {
                   </li>
                 ))}
               </ul>
+            </div>
+          )}
+
+          {!isAdmin && (
+            <div className="modal-edit-action">
+              <button
+                className="btn btn-primary"
+                style={{ width: '100%', justifyContent: 'center', gap: '0.4rem' }}
+                onClick={() => { onClose(); navigate('/request/edit'); }}
+              >
+                <FilePen size={15} />
+                Подать заявку на изменение данных
+              </button>
             </div>
           )}
         </div>
