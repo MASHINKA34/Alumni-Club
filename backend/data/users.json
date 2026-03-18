@@ -5,12 +5,5 @@
     "password": "$2a$10$g4kt80rKX.hFD4wB2JFid.4L2ptWMVvd/Ha3O./Em/McbEoC6qrD.",
     "role": "admin",
     "graduateId": null
-  },
-  {
-    "id": 1773826025661,
-    "login": "Гигант",
-    "password": "$2a$10$qUftVUJTurPd/1OTxeIuBON.BDe1TgMdVOcRwyS5EU7xg4qo6em0e",
-    "role": "member",
-    "graduateId": 1773826025605
   }
 ]
