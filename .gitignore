@@ -1,54 +1,38 @@
-.claude
-.vscode
-.idea
-*.log
-*.tmp
-*.bak
-.DS_Store
-node_modules
-dist
-build
-coverage
+# Зависимости
+node_modules/
+
+# Сборка
+dist/
+build/
+
+# Переменные окружения
 .env
-*.env
+.env.*
 *.env.local
-*.env.development
-*.env.test
-*.env.production
+
+# Данные (содержат пароли и персональные данные — не коммитить)
+backend/data/users.json
+backend/data/requests.json
+
+# Документы (бинарники — добавить в репо вручную если нужно)
+backend/public/docs/*.docx
+backend/public/docs/*.pdf
+
+# Логи
+*.log
+npm-debug.log*
+
+# Редакторы / IDE
+.vscode/
+.idea/
 *.sublime-project
 *.sublime-workspace
-*.iml
 *.swp
 *.swo
-*.swn
-*.sln
-*.suo
-*.xcodeproj
-*.xcworkspace
-*.xcuserstate
-*.xcconfig
-*.plist
-*.pem
-*.key
-*.crt
-*.p12
-*.jks
-*.keystore
-*.pfx
-*.zip
-*.tar.gz
-*.rar
-*.7z
-*.exe
-*.dll
-*.so
-*.dylib
-*.bin
-*.iso
-*.img
-*.vmdk
-*.qcow2
-*.vhd
-*.vhdx
-*.log
-*.csv
+
+# ОС
+.DS_Store
+Thumbs.db
+
+# Claude
+.claude/

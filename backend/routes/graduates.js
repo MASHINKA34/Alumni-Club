@@ -1,28 +1,39 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import { readData, writeData } from '../utils/data.js';
-import { authenticate, requireAdmin } from '../middleware/auth.js';
+import { optionalAuthenticate, authenticate, requireAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Вернуть список выпускников (с логином из users.json для формы администратора)
-router.get('/', (_req, res) => {
+// Список выпускников. Фото передаётся только авторизованным пользователям.
+router.get('/', optionalAuthenticate, (req, res) => {
   const graduates = readData('graduates.json');
   const users = readData('users.json');
+  const isAuthenticated = !!req.user;
+
   const result = graduates.map((grad) => {
     const user = users.find((u) => u.graduateId === grad.id);
-    return { ...grad, userLogin: user?.login || '' };
+    return {
+      ...grad,
+      photo: isAuthenticated ? (grad.photo || null) : null,
+      userLogin: user?.login || '',
+    };
   });
   res.json(result);
 });
 
-router.get('/:id', (req, res) => {
+// Один выпускник. Фото — только авторизованным.
+router.get('/:id', optionalAuthenticate, (req, res) => {
   const graduates = readData('graduates.json');
   const users = readData('users.json');
   const grad = graduates.find((g) => g.id === Number(req.params.id));
   if (!grad) return res.status(404).json({ error: 'Выпускник не найден' });
   const user = users.find((u) => u.graduateId === grad.id);
-  res.json({ ...grad, userLogin: user?.login || '' });
+  res.json({
+    ...grad,
+    photo: req.user ? (grad.photo || null) : null,
+    userLogin: user?.login || '',
+  });
 });
 
 router.post('/', authenticate, requireAdmin, async (req, res) => {
@@ -81,7 +92,6 @@ router.put('/:id', authenticate, requireAdmin, async (req, res) => {
     }
     writeData('users.json', users);
   } else if (gradData.name && userIdx !== -1) {
-    // Имя изменилось — автоматически обновляем логин
     users[userIdx].login = gradData.name;
     writeData('users.json', users);
   }

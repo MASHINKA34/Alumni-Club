@@ -2,11 +2,14 @@ import { useState } from 'react';
 import { ClipboardList, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
+const OTHER_GROUP = '__other__';
+
 export default function RegisterRequestPage() {
   const { submitRegisterRequest, groups } = useApp();
   const [form, setForm] = useState({
     name: '',
     group: '',
+    groupComment: '',
     graduationYear: new Date().getFullYear(),
     job: '',
     gender: 'Мужской',
@@ -18,6 +21,8 @@ export default function RegisterRequestPage() {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const isOtherGroup = form.group === OTHER_GROUP;
 
   function handleChange(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -40,6 +45,8 @@ export default function RegisterRequestPage() {
         ...form,
         graduationYear: Number(form.graduationYear),
         facts: form.facts.filter((f) => f.trim() !== ''),
+        group: isOtherGroup ? 'Другое' : form.group,
+        groupComment: isOtherGroup ? form.groupComment : undefined,
       });
       setSent(true);
     } catch (err) {
@@ -101,7 +108,8 @@ export default function RegisterRequestPage() {
                 required
               >
                 <option value="">Выберите группу</option>
-                {groups.map((g) => <option key={g}>{g}</option>)}
+                {groups.map((g) => <option key={g} value={g}>{g}</option>)}
+                <option value={OTHER_GROUP}>Другое (укажите в комментарии к заявке)</option>
               </select>
             </div>
             <div className="form-group">
@@ -118,6 +126,20 @@ export default function RegisterRequestPage() {
               />
             </div>
           </div>
+
+          {isOtherGroup && (
+            <div className="form-group">
+              <label className="form-label">Комментарий к группе *</label>
+              <input
+                className="form-input"
+                type="text"
+                placeholder="Укажите вашу группу или специальность"
+                value={form.groupComment}
+                onChange={(e) => handleChange('groupComment', e.target.value)}
+                required
+              />
+            </div>
+          )}
 
           <div className="form-row">
             <div className="form-group">
@@ -168,6 +190,20 @@ export default function RegisterRequestPage() {
               />
               Даю согласие на публикацию фотографии
             </label>
+            <a
+              href="/docs/Согласие_на_ОПД.docx"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'inline-block',
+                marginTop: '0.35rem',
+                fontSize: '0.8rem',
+                color: 'var(--accent)',
+                textDecoration: 'underline',
+              }}
+            >
+              Согласие на обработку персональных данных
+            </a>
           </div>
 
           <div className="form-group">

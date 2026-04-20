@@ -1,10 +1,16 @@
+import { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
-import { User, Briefcase, CalendarDays, GraduationCap, FilePen, BookOpen } from 'lucide-react';
+import { User, Briefcase, CalendarDays, GraduationCap, FilePen, BookOpen, Trash2, FileText } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export default function ProfilePage() {
-  const { user, graduates, loading } = useApp();
+  const { user, graduates, loading, submitDeletionRequest, logout } = useApp();
   const navigate = useNavigate();
+
+  const [showDeletionConfirm, setShowDeletionConfirm] = useState(false);
+  const [deletionSent, setDeletionSent] = useState(false);
+  const [deletionLoading, setDeletionLoading] = useState(false);
+  const [deletionError, setDeletionError] = useState('');
 
   if (!user) return <Navigate to="/login" replace />;
 
@@ -25,6 +31,20 @@ export default function ProfilePage() {
     : graduate?.gender === 'Женский'
       ? 'https://ui-avatars.com/api/?name=Female&background=ec4899&color=fff&size=200'
       : 'https://ui-avatars.com/api/?name=Male&background=6366f1&color=fff&size=200';
+
+  async function handleDeletionRequest() {
+    setDeletionError('');
+    setDeletionLoading(true);
+    try {
+      await submitDeletionRequest({});
+      setDeletionSent(true);
+      setShowDeletionConfirm(false);
+    } catch (err) {
+      setDeletionError(err.message || 'Ошибка отправки заявки');
+    } finally {
+      setDeletionLoading(false);
+    }
+  }
 
   return (
     <div className="page">
@@ -95,7 +115,7 @@ export default function ProfilePage() {
                 </div>
               )}
 
-              <div style={{ marginTop: '1.5rem' }}>
+              <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 <button
                   className="btn btn-primary"
                   onClick={() => navigate('/request/edit')}
@@ -104,6 +124,72 @@ export default function ProfilePage() {
                   <FilePen size={16} />
                   Подать заявку на редактирование данных
                 </button>
+
+                {!deletionSent ? (
+                  <>
+                    {!showDeletionConfirm ? (
+                      <button
+                        className="btn btn-danger"
+                        onClick={() => setShowDeletionConfirm(true)}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+                      >
+                        <Trash2 size={16} />
+                        Подать заявку на удаление аккаунта
+                      </button>
+                    ) : (
+                      <div className="admin-form-card" style={{ padding: '1rem' }}>
+                        <p style={{ marginBottom: '0.75rem', fontWeight: '500' }}>
+                          Подтвердите заявку на удаление аккаунта
+                        </p>
+                        <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
+                          После одобрения администратором ваш аккаунт и данные будут удалены из базы.
+                          Ознакомьтесь с документом:
+                        </p>
+                        <a
+                          href="/docs/Отзыв_согласия_на_ОПД.docx"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.4rem',
+                            fontSize: '0.875rem',
+                            color: 'var(--accent)',
+                            textDecoration: 'underline',
+                            marginBottom: '1rem',
+                          }}
+                        >
+                          <FileText size={14} />
+                          Отзыв согласия на обработку персональных данных
+                        </a>
+                        {deletionError && (
+                          <p style={{ color: 'var(--danger)', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                            {deletionError}
+                          </p>
+                        )}
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button
+                            className="btn btn-danger"
+                            onClick={handleDeletionRequest}
+                            disabled={deletionLoading}
+                          >
+                            {deletionLoading ? 'Отправка...' : 'Подтвердить'}
+                          </button>
+                          <button
+                            className="btn btn-secondary"
+                            onClick={() => { setShowDeletionConfirm(false); setDeletionError(''); }}
+                          >
+                            Отмена
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <p style={{ color: 'var(--success)', fontSize: '0.875rem' }}>
+                    Заявка на удаление отправлена. Администратор рассмотрит её в ближайшее время.
+                  </p>
+                )}
               </div>
             </div>
           </div>

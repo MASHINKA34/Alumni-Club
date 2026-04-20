@@ -497,7 +497,9 @@ export default function AdminPage() {
               <div className="request-card-header">
                 <div className="request-card-meta">
                   <span className={`request-type-badge request-type-badge--${req.type}`}>
-                    {req.type === 'registration' ? 'Регистрация' : 'Редактирование'}
+                    {req.type === 'registration' && 'Регистрация'}
+                    {req.type === 'edit' && 'Редактирование'}
+                    {req.type === 'deletion' && 'Удаление аккаунта'}
                   </span>
                   <span className={`request-status-badge request-status-badge--${req.status}`}>
                     {req.status === 'pending' && <><Clock size={12} /> На рассмотрении</>}
@@ -533,7 +535,7 @@ export default function AdminPage() {
                 {req.facts && req.facts.length > 0 && (
                   <p><strong>Прочее:</strong> {req.facts.join('; ')}</p>
                 )}
-                {req.password && <p><strong>Пароль:</strong> {req.password}</p>}
+                {req.groupComment && <p><strong>Комментарий к группе:</strong> {req.groupComment}</p>}
                 {req.message && <p><strong>Сообщение:</strong> {req.message}</p>}
               </div>
             </div>

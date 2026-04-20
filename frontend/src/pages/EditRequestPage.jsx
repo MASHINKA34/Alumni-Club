@@ -3,16 +3,22 @@ import { Navigate } from 'react-router-dom';
 import { FilePen, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
+const OTHER_GROUP = '__other__';
+
 export default function EditRequestPage() {
-  const { user, isAdmin, submitEditRequest, graduates, groups } = useApp();
+  const { user, submitEditRequest, graduates, groups } = useApp();
 
   const myGraduate = user?.graduateId
     ? graduates.find((g) => g.id === user.graduateId)
     : null;
 
+  const currentGroup = myGraduate?.group || '';
+  const isCurrentGroupKnown = groups.includes(currentGroup);
+
   const [form, setForm] = useState({
     name: myGraduate?.name || '',
-    group: myGraduate?.group || (groups[0] || ''),
+    group: isCurrentGroupKnown ? currentGroup : (currentGroup ? OTHER_GROUP : (groups[0] || '')),
+    groupComment: isCurrentGroupKnown ? '' : currentGroup,
     graduationYear: myGraduate?.graduationYear || new Date().getFullYear(),
     job: myGraduate?.job || '',
     gender: myGraduate?.gender || 'Мужской',
@@ -23,6 +29,8 @@ export default function EditRequestPage() {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const isOtherGroup = form.group === OTHER_GROUP;
 
   if (!user) return <Navigate to="/login" replace />;
 
@@ -47,6 +55,8 @@ export default function EditRequestPage() {
         ...form,
         graduationYear: Number(form.graduationYear),
         facts: form.facts.filter((f) => f.trim() !== ''),
+        group: isOtherGroup ? 'Другое' : form.group,
+        groupComment: isOtherGroup ? form.groupComment : undefined,
         graduateId: user.graduateId || null,
       });
       setSent(true);
@@ -108,7 +118,9 @@ export default function EditRequestPage() {
                 onChange={(e) => handleChange('group', e.target.value)}
                 required
               >
-                {groups.map((g) => <option key={g}>{g}</option>)}
+                <option value="">Выберите группу</option>
+                {groups.map((g) => <option key={g} value={g}>{g}</option>)}
+                <option value={OTHER_GROUP}>Другое (укажите в комментарии к заявке)</option>
               </select>
             </div>
             <div className="form-group">
@@ -125,6 +137,20 @@ export default function EditRequestPage() {
               />
             </div>
           </div>
+
+          {isOtherGroup && (
+            <div className="form-group">
+              <label className="form-label">Комментарий к группе *</label>
+              <input
+                className="form-input"
+                type="text"
+                placeholder="Укажите вашу группу или специальность"
+                value={form.groupComment}
+                onChange={(e) => handleChange('groupComment', e.target.value)}
+                required
+              />
+            </div>
+          )}
 
           <div className="form-group">
             <label className="form-label">Место работы</label>

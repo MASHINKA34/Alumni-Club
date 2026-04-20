@@ -18,6 +18,8 @@ const PORT = 3001;
 app.use(cors());
 app.use(express.json());
 app.use('/images', express.static(path.join(__dirname, 'public/images')));
+// Документы (Согласие на ОПД, Отзыв согласия и т.д.) — backend/public/docs/
+app.use('/docs', express.static(path.join(__dirname, 'public/docs')));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/graduates', graduatesRoutes);

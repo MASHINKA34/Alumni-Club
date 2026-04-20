@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 
 const AppContext = createContext(null);
 
@@ -14,18 +14,21 @@ export function AppProvider({ children }) {
 
   const isAdmin = user?.role === 'admin';
   const isMember = user?.role === 'member';
-  const token = localStorage.getItem('token');
 
-  const authHeaders = useCallback(() => ({
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  }), [token]);
+  // Всегда читает актуальный токен из storage — важно при вызове сразу после login/logout
+  function authHeaders() {
+    const currentToken = localStorage.getItem('token');
+    return {
+      'Content-Type': 'application/json',
+      ...(currentToken ? { Authorization: `Bearer ${currentToken}` } : {}),
+    };
+  }
 
   async function fetchAll() {
     setLoading(true);
     try {
       const [gradsRes, groupsRes] = await Promise.all([
-        fetch(`${API}/graduates`),
+        fetch(`${API}/graduates`, { headers: authHeaders() }),
         fetch(`${API}/groups`),
       ]);
       setGraduates(await gradsRes.json());
@@ -39,11 +42,11 @@ export function AppProvider({ children }) {
 
   useEffect(() => { fetchAll(); }, []);
 
-  async function login(login, password) {
+  async function login(loginVal, password) {
     const res = await fetch(`${API}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ login, password }),
+      body: JSON.stringify({ login: loginVal, password }),
     });
     if (!res.ok) {
       const err = await res.json();
@@ -54,6 +57,8 @@ export function AppProvider({ children }) {
     const userData = { role: data.role, graduateId: data.graduateId, login: data.login };
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
+    // Рефетч с токеном — получаем реальные фото для авторизованного пользователя
+    await fetchAll();
     return data.role;
   }
 
@@ -61,6 +66,8 @@ export function AppProvider({ children }) {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
+    // Рефетч без токена — фото будут скрыты
+    fetchAll();
   }
 
   async function addGraduate(grad) {
@@ -125,7 +132,10 @@ export function AppProvider({ children }) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    if (!res.ok) throw new Error('Ошибка отправки заявки');
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Ошибка отправки заявки');
+    }
   }
 
   async function submitEditRequest(data) {
@@ -135,6 +145,15 @@ export function AppProvider({ children }) {
       body: JSON.stringify(data),
     });
     if (!res.ok) throw new Error('Ошибка отправки заявки');
+  }
+
+  async function submitDeletionRequest(data) {
+    const res = await fetch(`${API}/requests/deletion`, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error('Ошибка отправки заявки на удаление');
   }
 
   async function fetchRequests() {
@@ -160,7 +179,7 @@ export function AppProvider({ children }) {
       login, logout,
       addGraduate, updateGraduate, deleteGraduate,
       addGroup, deleteGroup,
-      submitRegisterRequest, submitEditRequest,
+      submitRegisterRequest, submitEditRequest, submitDeletionRequest,
       fetchRequests, resolveRequest,
       refetch: fetchAll,
     }}>
