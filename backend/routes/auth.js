@@ -1,16 +1,16 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { readData } from '../utils/data.js';
+import db from '../db.js';
 import { JWT_SECRET } from '../middleware/auth.js';
 
 const router = express.Router();
 
 router.post('/login', async (req, res) => {
   const { login, password } = req.body;
-  const users = readData('users.json');
-  const user = users.find((u) => u.login === login);
+  if (!login || !password) return res.status(400).json({ error: 'Введите логин и пароль' });
 
+  const user = db.prepare('SELECT * FROM users WHERE login = ?').get(login);
   if (!user) return res.status(401).json({ error: 'Неверный логин или пароль' });
 
   const valid = await bcrypt.compare(password, user.password);

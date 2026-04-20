@@ -1,115 +1,120 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
-import { readData, writeData } from '../utils/data.js';
+import db, { gradFromRow } from '../db.js';
 import { optionalAuthenticate, authenticate, requireAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Список выпускников. Фото передаётся только авторизованным пользователям.
-router.get('/', optionalAuthenticate, (req, res) => {
-  const graduates = readData('graduates.json');
-  const users = readData('users.json');
-  const isAuthenticated = !!req.user;
+const WITH_USER = `
+  SELECT g.*, u.login AS userLogin
+  FROM graduates g
+  LEFT JOIN users u ON u.graduateId = g.id
+`;
 
-  const result = graduates.map((grad) => {
-    const user = users.find((u) => u.graduateId === grad.id);
-    return {
-      ...grad,
-      photo: isAuthenticated ? (grad.photo || null) : null,
-      userLogin: user?.login || '',
-    };
-  });
-  res.json(result);
+// Список. Фото передаётся только авторизованным.
+router.get('/', optionalAuthenticate, (req, res) => {
+  const rows = db.prepare(`${WITH_USER} ORDER BY g.id`).all();
+  const isAuth = !!req.user;
+  res.json(rows.map((row) => ({
+    ...gradFromRow(row),
+    photo: isAuth ? (row.photo || null) : null,
+    userLogin: row.userLogin || '',
+  })));
 });
 
 // Один выпускник. Фото — только авторизованным.
 router.get('/:id', optionalAuthenticate, (req, res) => {
-  const graduates = readData('graduates.json');
-  const users = readData('users.json');
-  const grad = graduates.find((g) => g.id === Number(req.params.id));
-  if (!grad) return res.status(404).json({ error: 'Выпускник не найден' });
-  const user = users.find((u) => u.graduateId === grad.id);
+  const row = db.prepare(`${WITH_USER} WHERE g.id = ?`).get(Number(req.params.id));
+  if (!row) return res.status(404).json({ error: 'Выпускник не найден' });
   res.json({
-    ...grad,
-    photo: req.user ? (grad.photo || null) : null,
-    userLogin: user?.login || '',
+    ...gradFromRow(row),
+    photo: req.user ? (row.photo || null) : null,
+    userLogin: row.userLogin || '',
   });
 });
 
 router.post('/', authenticate, requireAdmin, async (req, res) => {
-  const graduates = readData('graduates.json');
-  const { login, password, userLogin, ...gradData } = req.body;
-  const newGrad = { id: Date.now(), ...gradData };
-  graduates.push(newGrad);
-  writeData('graduates.json', graduates);
+  const { userLogin, login, password, group, facts, photoConsent, ...rest } = req.body;
+  const effectiveLogin = userLogin || login;
 
-  const effectiveLogin = login || userLogin;
+  const info = db.prepare(`
+    INSERT INTO graduates (name, photo, photoConsent, grp, graduationYear, job, gender, facts)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    rest.name,
+    rest.photo || null,
+    photoConsent ? 1 : 0,
+    group || '',
+    rest.graduationYear,
+    rest.job || '',
+    rest.gender || 'Мужской',
+    JSON.stringify(facts || [])
+  );
+  const newId = info.lastInsertRowid;
+
   if (effectiveLogin && password) {
-    const users = readData('users.json');
-    const hashedPassword = await bcrypt.hash(password, 10);
-    users.push({
-      id: Date.now() + 1,
-      login: effectiveLogin,
-      password: hashedPassword,
-      role: 'member',
-      graduateId: newGrad.id,
-    });
-    writeData('users.json', users);
+    const hashed = await bcrypt.hash(password, 10);
+    db.prepare('INSERT INTO users (login, password, role, graduateId) VALUES (?, ?, ?, ?)')
+      .run(effectiveLogin, hashed, 'member', newId);
   }
 
-  res.status(201).json({ ...newGrad, userLogin: effectiveLogin || '' });
+  const row = db.prepare(`${WITH_USER} WHERE g.id = ?`).get(newId);
+  res.status(201).json({ ...gradFromRow(row), userLogin: row?.userLogin || '' });
 });
 
 router.put('/:id', authenticate, requireAdmin, async (req, res) => {
-  const graduates = readData('graduates.json');
-  const idx = graduates.findIndex((g) => g.id === Number(req.params.id));
-  if (idx === -1) return res.status(404).json({ error: 'Выпускник не найден' });
+  const id = Number(req.params.id);
+  const existing = db.prepare('SELECT * FROM graduates WHERE id = ?').get(id);
+  if (!existing) return res.status(404).json({ error: 'Выпускник не найден' });
 
-  const { login, password, userLogin, ...gradData } = req.body;
-  graduates[idx] = { ...graduates[idx], ...gradData, id: graduates[idx].id };
-  writeData('graduates.json', graduates);
+  const { userLogin, login, password, group, facts, photoConsent, ...rest } = req.body;
+  const effectiveLogin = userLogin || login;
 
-  const effectiveLogin = login || userLogin;
-  const users = readData('users.json');
-  const userIdx = users.findIndex((u) => u.graduateId === graduates[idx].id);
+  db.prepare(`
+    UPDATE graduates
+    SET name=?, photo=?, photoConsent=?, grp=?, graduationYear=?, job=?, gender=?, facts=?
+    WHERE id=?
+  `).run(
+    rest.name ?? existing.name,
+    rest.photo ?? existing.photo,
+    photoConsent !== undefined ? (photoConsent ? 1 : 0) : existing.photoConsent,
+    group ?? existing.grp,
+    rest.graduationYear ?? existing.graduationYear,
+    rest.job ?? existing.job,
+    rest.gender ?? existing.gender,
+    facts ? JSON.stringify(facts) : existing.facts,
+    id
+  );
+
+  const user = db.prepare('SELECT * FROM users WHERE graduateId = ?').get(id);
 
   if (effectiveLogin) {
     if (password) {
-      const hashedPassword = await bcrypt.hash(password, 10);
-      if (userIdx !== -1) {
-        users[userIdx] = { ...users[userIdx], login: effectiveLogin, password: hashedPassword };
+      const hashed = await bcrypt.hash(password, 10);
+      if (user) {
+        db.prepare('UPDATE users SET login=?, password=? WHERE id=?').run(effectiveLogin, hashed, user.id);
       } else {
-        users.push({
-          id: Date.now() + 1,
-          login: effectiveLogin,
-          password: hashedPassword,
-          role: 'member',
-          graduateId: graduates[idx].id,
-        });
+        db.prepare('INSERT INTO users (login, password, role, graduateId) VALUES (?, ?, ?, ?)')
+          .run(effectiveLogin, hashed, 'member', id);
       }
-    } else if (userIdx !== -1) {
-      users[userIdx].login = effectiveLogin;
+    } else if (user) {
+      db.prepare('UPDATE users SET login=? WHERE id=?').run(effectiveLogin, user.id);
     }
-    writeData('users.json', users);
-  } else if (gradData.name && userIdx !== -1) {
-    users[userIdx].login = gradData.name;
-    writeData('users.json', users);
+  } else if (rest.name && user) {
+    // Имя изменилось — логин синхронизируется автоматически
+    db.prepare('UPDATE users SET login=? WHERE id=?').run(rest.name, user.id);
   }
 
-  const updatedUsers = readData('users.json');
-  const linkedUser = updatedUsers.find((u) => u.graduateId === graduates[idx].id);
-  res.json({ ...graduates[idx], userLogin: linkedUser?.login || '' });
+  const row = db.prepare(`${WITH_USER} WHERE g.id = ?`).get(id);
+  res.json({ ...gradFromRow(row), userLogin: row?.userLogin || '' });
 });
 
 router.delete('/:id', authenticate, requireAdmin, (req, res) => {
-  const graduates = readData('graduates.json');
-  const filtered = graduates.filter((g) => g.id !== Number(req.params.id));
-  writeData('graduates.json', filtered);
-
-  const users = readData('users.json');
-  const filteredUsers = users.filter((u) => u.graduateId !== Number(req.params.id));
-  writeData('users.json', filteredUsers);
-
+  const id = Number(req.params.id);
+  db.transaction(() => {
+    db.prepare('DELETE FROM users WHERE graduateId = ?').run(id);
+    db.prepare('DELETE FROM graduates WHERE id = ?').run(id);
+  })();
   res.json({ success: true });
 });
 

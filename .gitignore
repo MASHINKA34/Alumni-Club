@@ -10,7 +10,12 @@ build/
 .env.*
 *.env.local
 
-# Данные (содержат пароли и персональные данные — не коммитить)
+# База данных SQLite (содержит пароли и персданные)
+backend/data/alumni.db
+backend/data/alumni.db-shm
+backend/data/alumni.db-wal
+
+# Старые JSON-файлы данных (если остались)
 backend/data/users.json
 backend/data/requests.json
 

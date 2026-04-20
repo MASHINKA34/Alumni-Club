@@ -3,7 +3,7 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
-import { readData, writeData } from './utils/data.js';
+import db from './db.js';
 import authRoutes from './routes/auth.js';
 import graduatesRoutes from './routes/graduates.js';
 import groupsRoutes from './routes/groups.js';
@@ -18,7 +18,7 @@ const PORT = 3001;
 app.use(cors());
 app.use(express.json());
 app.use('/images', express.static(path.join(__dirname, 'public/images')));
-// Документы (Согласие на ОПД, Отзыв согласия и т.д.) — backend/public/docs/
+// Документы (Согласие на ОПД, Отзыв согласия) — backend/public/docs/
 app.use('/docs', express.static(path.join(__dirname, 'public/docs')));
 
 app.use('/api/auth', authRoutes);
@@ -26,13 +26,13 @@ app.use('/api/graduates', graduatesRoutes);
 app.use('/api/groups', groupsRoutes);
 app.use('/api/requests', requestsRoutes);
 
-// Инициализация: создаём admin-пользователя если users.json пуст
+// Инициализация: создаём admin если таблица users пуста
 async function init() {
-  const users = readData('users.json');
-  if (users.length === 0) {
+  const count = db.prepare('SELECT COUNT(*) AS cnt FROM users').get();
+  if (count.cnt === 0) {
     const hashed = await bcrypt.hash('admin', 10);
-    users.push({ id: 1, login: 'admin', password: hashed, role: 'admin', graduateId: null });
-    writeData('users.json', users);
+    db.prepare('INSERT INTO users (login, password, role, graduateId) VALUES (?, ?, ?, NULL)')
+      .run('admin', hashed, 'admin');
     console.log('Создан admin: login=admin, password=admin');
   }
 }
