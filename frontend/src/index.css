@@ -1655,6 +1655,43 @@ img { display: block; }
   }
 }
 
+/* ========= Confirm Modal ========= */
+.confirm-modal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2rem 1.75rem;
+  max-width: 380px;
+  width: calc(100% - 2rem);
+  text-align: center;
+  box-shadow: var(--shadow);
+  animation: modal-in 0.18s ease;
+}
+
+.confirm-modal-icon {
+  margin-bottom: 1rem;
+}
+
+.confirm-modal-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.confirm-modal-text {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+.confirm-modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
 /* ========= Modal own-profile action ========= */
 .modal-edit-action {
   margin-top: 1rem;

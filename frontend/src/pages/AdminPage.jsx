@@ -36,6 +36,7 @@ export default function AdminPage() {
   const [requests, setRequests] = useState([]);
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [resolvingId, setResolvingId] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null); // { id, label }
 
   useEffect(() => {
     if (isAdmin && tab === 'requests') loadRequests();
@@ -151,14 +152,15 @@ export default function AdminPage() {
   }
 
 
-  async function handleDeleteRequest(id) {
-    if (!window.confirm('Удалить эту заявку?')) return;
+  async function confirmAndDelete(id) {
     try {
       await deleteRequest(id);
       setRequests((prev) => prev.filter((r) => r.id !== id));
       showSuccess('Заявка удалена');
     } catch (err) {
       showSuccess('Ошибка: ' + err.message);
+    } finally {
+      setConfirmDelete(null);
     }
   }
 
@@ -548,7 +550,7 @@ export default function AdminPage() {
                   )}
                   <button
                     className="btn btn-small btn-secondary"
-                    onClick={() => handleDeleteRequest(req.id)}
+                    onClick={() => setConfirmDelete({ id: req.id, label: req.name || 'заявку' })}
                     title="Удалить заявку"
                   >
                     <Trash2 size={14} />
@@ -569,6 +571,26 @@ export default function AdminPage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {confirmDelete && (
+        <div className="modal-backdrop" onClick={() => setConfirmDelete(null)}>
+          <div className="confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="confirm-modal-icon"><Trash2 size={28} color="var(--danger)" /></div>
+            <h3 className="confirm-modal-title">Удалить заявку?</h3>
+            <p className="confirm-modal-text">
+              Заявка от <strong>{confirmDelete.label}</strong> будет безвозвратно удалена.
+            </p>
+            <div className="confirm-modal-actions">
+              <button className="btn btn-danger" onClick={() => confirmAndDelete(confirmDelete.id)}>
+                Удалить
+              </button>
+              <button className="btn btn-secondary" onClick={() => setConfirmDelete(null)}>
+                Отмена
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

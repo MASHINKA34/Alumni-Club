@@ -44,9 +44,24 @@ export default function RegisterRequestPage() {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (ev) => {
-      const dataUrl = ev.target.result;
-      setPhotoPreview(dataUrl);
-      handleChange('photo', dataUrl);
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 800;
+        let { width, height } = img;
+        if (width > MAX || height > MAX) {
+          const ratio = Math.min(MAX / width, MAX / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        const compressed = canvas.toDataURL('image/jpeg', 0.75);
+        setPhotoPreview(compressed);
+        handleChange('photo', compressed);
+      };
+      img.src = ev.target.result;
     };
     reader.readAsDataURL(file);
   }
