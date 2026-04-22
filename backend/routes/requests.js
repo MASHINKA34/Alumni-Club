@@ -99,6 +99,15 @@ router.post('/deletion', authenticate, (req, res) => {
   res.status(201).json({ success: true });
 });
 
+// Удалить заявку (только admin)
+router.delete('/:id', authenticate, requireAdmin, (req, res) => {
+  const id = Number(req.params.id);
+  const request = db.prepare('SELECT id FROM requests WHERE id = ?').get(id);
+  if (!request) return res.status(404).json({ error: 'Заявка не найдена' });
+  db.prepare('DELETE FROM requests WHERE id = ?').run(id);
+  res.json({ success: true });
+});
+
 // Список заявок (только admin)
 router.get('/', authenticate, requireAdmin, (_req, res) => {
   const rows = db.prepare('SELECT * FROM requests ORDER BY createdAt DESC').all();

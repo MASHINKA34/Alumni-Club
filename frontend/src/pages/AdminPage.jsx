@@ -24,7 +24,7 @@ export default function AdminPage() {
     graduates, groups, isAdmin,
     addGraduate, updateGraduate, deleteGraduate,
     addGroup, deleteGroup,
-    fetchRequests, resolveRequest,
+    fetchRequests, resolveRequest, deleteRequest,
   } = useApp();
 
   const [tab, setTab] = useState('graduates');
@@ -150,6 +150,17 @@ export default function AdminPage() {
     }
   }
 
+
+  async function handleDeleteRequest(id) {
+    if (!window.confirm('Удалить эту заявку?')) return;
+    try {
+      await deleteRequest(id);
+      setRequests((prev) => prev.filter((r) => r.id !== id));
+      showSuccess('Заявка удалена');
+    } catch (err) {
+      showSuccess('Ошибка: ' + err.message);
+    }
+  }
 
   async function handleResolve(id, status) {
     if (resolvingId !== null) return;
@@ -516,24 +527,33 @@ export default function AdminPage() {
                     {new Date(req.createdAt).toLocaleDateString('ru-RU')}
                   </span>
                 </div>
-                {req.status === 'pending' && (
-                  <div className="request-card-actions">
-                    <button
-                      className="btn btn-small btn-success"
-                      onClick={() => handleResolve(req.id, 'approved')}
-                      disabled={resolvingId !== null}
-                    >
-                      {resolvingId === req.id ? '...' : <><Check size={14} /> Одобрить</>}
-                    </button>
-                    <button
-                      className="btn btn-small btn-danger"
-                      onClick={() => handleResolve(req.id, 'rejected')}
-                      disabled={resolvingId !== null}
-                    >
-                      {resolvingId === req.id ? '...' : <><X size={14} /> Отклонить</>}
-                    </button>
-                  </div>
-                )}
+                <div className="request-card-actions">
+                  {req.status === 'pending' && (
+                    <>
+                      <button
+                        className="btn btn-small btn-success"
+                        onClick={() => handleResolve(req.id, 'approved')}
+                        disabled={resolvingId !== null}
+                      >
+                        {resolvingId === req.id ? '...' : <><Check size={14} /> Одобрить</>}
+                      </button>
+                      <button
+                        className="btn btn-small btn-danger"
+                        onClick={() => handleResolve(req.id, 'rejected')}
+                        disabled={resolvingId !== null}
+                      >
+                        {resolvingId === req.id ? '...' : <><X size={14} /> Отклонить</>}
+                      </button>
+                    </>
+                  )}
+                  <button
+                    className="btn btn-small btn-secondary"
+                    onClick={() => handleDeleteRequest(req.id)}
+                    title="Удалить заявку"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
               <div className="request-card-body">
                 {req.name && <p><strong>Имя:</strong> {req.name}</p>}

@@ -156,6 +156,14 @@ export function AppProvider({ children }) {
     if (!res.ok) throw new Error('Ошибка отправки заявки на удаление');
   }
 
+  async function deleteRequest(id) {
+    const res = await fetch(`${API}/requests/${id}`, {
+      method: 'DELETE',
+      headers: authHeaders(),
+    });
+    if (!res.ok) throw new Error('Ошибка удаления заявки');
+  }
+
   async function fetchRequests() {
     const res = await fetch(`${API}/requests`, { headers: authHeaders() });
     if (!res.ok) throw new Error('Ошибка загрузки заявок');
@@ -181,7 +189,7 @@ export function AppProvider({ children }) {
       addGraduate, updateGraduate, deleteGraduate,
       addGroup, deleteGroup,
       submitRegisterRequest, submitEditRequest, submitDeletionRequest,
-      fetchRequests, resolveRequest,
+      fetchRequests, resolveRequest, deleteRequest,
       refetch: fetchAll,
     }}>
       {children}
