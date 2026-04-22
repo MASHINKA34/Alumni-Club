@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { KeyRound, ShieldAlert } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export default function LoginPage() {
-  const { login } = useApp();
+  const { login, user, isAdmin } = useApp();
   const navigate = useNavigate();
+
+  if (user) return <Navigate to={isAdmin ? '/admin' : '/profile'} replace />;
   const [form, setForm] = useState({ login: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);

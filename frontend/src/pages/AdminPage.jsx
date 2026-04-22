@@ -37,10 +37,16 @@ export default function AdminPage() {
   const [requestsLoading, setRequestsLoading] = useState(false);
   const [resolvingId, setResolvingId] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null); // { id, label }
+  const [requestSearch, setRequestSearch] = useState('');
+
+  // Предзагружаем заявки сразу при открытии панели, а не только при клике на вкладку
+  useEffect(() => {
+    if (isAdmin) loadRequests();
+  }, [isAdmin]);
 
   useEffect(() => {
-    if (isAdmin && tab === 'requests') loadRequests();
-  }, [tab, isAdmin]);
+    if (isAdmin && tab === 'requests' && requests.length === 0) loadRequests();
+  }, [tab]);
 
   if (!isAdmin) return <Navigate to="/login" replace />;
 
@@ -503,15 +509,34 @@ export default function AdminPage() {
 
       {tab === 'requests' && (
         <div className="admin-requests-section">
-          <h2 className="admin-form-title" style={{ marginBottom: '1rem' }}>Заявки</h2>
-          {requestsLoading && <p style={{ color: 'var(--text-secondary)' }}>Загрузка...</p>}
-          {!requestsLoading && requests.length === 0 && (
-            <div className="empty-state">
-              <ClipboardList size={40} strokeWidth={1.5} />
-              <p>Заявок пока нет</p>
-            </div>
-          )}
-          {requests.map((req) => (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+            <h2 className="admin-form-title" style={{ margin: 0 }}>Заявки</h2>
+            <input
+              className="form-input"
+              style={{ maxWidth: '280px', flex: '1' }}
+              type="text"
+              placeholder="Поиск по ФИО..."
+              value={requestSearch}
+              onChange={(e) => setRequestSearch(e.target.value)}
+            />
+            {requestsLoading && <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Обновление...</span>}
+          </div>
+          {(() => {
+            if (!requestsLoading && requests.length === 0) return (
+              <div className="empty-state">
+                <ClipboardList size={40} strokeWidth={1.5} />
+                <p>Заявок пока нет</p>
+              </div>
+            );
+            const q = requestSearch.trim().toLowerCase();
+            const visible = q ? requests.filter(r => (r.name || '').toLowerCase().includes(q)) : requests;
+            if (q && visible.length === 0) return (
+              <div className="empty-state">
+                <ClipboardList size={32} strokeWidth={1.5} />
+                <p>Ничего не найдено по запросу «{requestSearch}»</p>
+              </div>
+            );
+            return visible.map((req) => (
             <div key={req.id} className="request-card">
               <div className="request-card-header">
                 <div className="request-card-meta">
@@ -570,7 +595,8 @@ export default function AdminPage() {
                 {req.message && <p><strong>Сообщение:</strong> {req.message}</p>}
               </div>
             </div>
-          ))}
+          ));
+          })()}
         </div>
       )}
 
