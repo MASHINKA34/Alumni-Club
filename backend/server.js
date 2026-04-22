@@ -16,7 +16,7 @@ const app = express();
 const PORT = 3001;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use('/images', express.static(path.join(__dirname, 'public/images')));
 // Документы (Согласие на ОПД, Отзыв согласия) — backend/public/docs/
 app.use('/docs', express.static(path.join(__dirname, 'public/docs')));
