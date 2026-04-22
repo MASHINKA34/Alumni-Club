@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { ClipboardList, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
@@ -6,6 +6,7 @@ const OTHER_GROUP = '__other__';
 
 export default function RegisterRequestPage() {
   const { submitRegisterRequest, groups } = useApp();
+  const fileInputRef = useRef(null);
   const [form, setForm] = useState({
     name: '',
     group: '',
@@ -17,7 +18,9 @@ export default function RegisterRequestPage() {
     facts: ['', '', ''],
     message: '',
     password: '',
+    photo: '',
   });
+  const [photoPreview, setPhotoPreview] = useState('');
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -34,6 +37,24 @@ export default function RegisterRequestPage() {
       facts[i] = value;
       return { ...prev, facts };
     });
+  }
+
+  function handlePhotoFile(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target.result;
+      setPhotoPreview(dataUrl);
+      handleChange('photo', dataUrl);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function handlePhotoUrl(value) {
+    handleChange('photo', value);
+    setPhotoPreview(value);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
   async function handleSubmit(e) {
@@ -109,7 +130,7 @@ export default function RegisterRequestPage() {
               >
                 <option value="">Выберите группу</option>
                 {groups.map((g) => <option key={g} value={g}>{g}</option>)}
-                <option value={OTHER_GROUP}>Другое (укажите в комментарии к заявке)</option>
+                <option value={OTHER_GROUP}>Другое (укажите в комментарии)</option>
               </select>
             </div>
             <div className="form-group">
@@ -182,28 +203,37 @@ export default function RegisterRequestPage() {
           </div>
 
           <div className="form-group">
-            <label className="form-label form-label--checkbox">
-              <input
-                type="checkbox"
-                checked={form.photoConsent}
-                onChange={(e) => handleChange('photoConsent', e.target.checked)}
+            <label className="form-label">Фото (необязательно)</label>
+            <input
+              className="form-input"
+              type="text"
+              placeholder="Вставьте ссылку на фото (https://...)"
+              value={typeof form.photo === 'string' && !form.photo.startsWith('data:') ? form.photo : ''}
+              onChange={(e) => handlePhotoUrl(e.target.value)}
+            />
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0.35rem 0' }}>или загрузите файл:</p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoFile}
+              style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}
+            />
+            {photoPreview && (
+              <img
+                src={photoPreview}
+                alt="preview"
+                onError={() => setPhotoPreview('')}
+                style={{
+                  marginTop: '0.5rem',
+                  width: 72,
+                  height: 72,
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  border: '2px solid var(--accent)',
+                }}
               />
-              Даю согласие на публикацию фотографии
-            </label>
-            <a
-              href="/docs/Согласие_на_ОПД.docx"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: 'inline-block',
-                marginTop: '0.35rem',
-                fontSize: '0.8rem',
-                color: 'var(--accent)',
-                textDecoration: 'underline',
-              }}
-            >
-              Согласие на обработку персональных данных
-            </a>
+            )}
           </div>
 
           <div className="form-group">
@@ -219,6 +249,29 @@ export default function RegisterRequestPage() {
               onChange={(e) => handleChange('password', e.target.value)}
               required
             />
+          </div>
+
+          <div className="form-group">
+            <div className="consent-row">
+              <input
+                type="checkbox"
+                id="reg-photoConsent"
+                checked={form.photoConsent}
+                onChange={(e) => handleChange('photoConsent', e.target.checked)}
+              />
+              <label htmlFor="reg-photoConsent" style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                ДАЮ{' '}
+                <a
+                  href="/docs/Согласие_на_ОПД.docx"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  style={{ color: 'var(--accent)', textDecoration: 'underline' }}
+                >
+                  Согласие на обработку персональных данных
+                </a>
+              </label>
+            </div>
           </div>
 
           <div className="form-group">

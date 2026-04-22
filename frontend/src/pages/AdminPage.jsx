@@ -35,6 +35,7 @@ export default function AdminPage() {
   const [newGroupName, setNewGroupName] = useState('');
   const [requests, setRequests] = useState([]);
   const [requestsLoading, setRequestsLoading] = useState(false);
+  const [resolvingId, setResolvingId] = useState(null);
 
   useEffect(() => {
     if (isAdmin && tab === 'requests') loadRequests();
@@ -83,11 +84,12 @@ export default function AdminPage() {
 
   function handleEdit(grad) {
     setEditId(grad.id);
+    const groupValue = groups.includes(grad.group) ? grad.group : (groups[0] || '');
     setForm({
       name: grad.name,
       photo: grad.photo || '',
       photoConsent: grad.photoConsent ?? true,
-      group: grad.group,
+      group: groupValue,
       graduationYear: grad.graduationYear,
       job: grad.job || '',
       gender: grad.gender || 'Мужской',
@@ -150,12 +152,16 @@ export default function AdminPage() {
 
 
   async function handleResolve(id, status) {
+    if (resolvingId !== null) return;
+    setResolvingId(id);
     try {
       await resolveRequest(id, status);
       await loadRequests();
       showSuccess(status === 'approved' ? 'Заявка одобрена' : 'Заявка отклонена');
     } catch (err) {
       showSuccess('Ошибка: ' + err.message);
+    } finally {
+      setResolvingId(null);
     }
   }
 
@@ -242,7 +248,7 @@ export default function AdminPage() {
                     onChange={(e) => handleFormChange('group', e.target.value)}
                     required
                   >
-                    {groups.map((g) => <option key={g}>{g}</option>)}
+                    {groups.map((g) => <option key={g} value={g}>{g}</option>)}
                   </select>
                 </div>
                 <div className="form-group">
@@ -515,14 +521,16 @@ export default function AdminPage() {
                     <button
                       className="btn btn-small btn-success"
                       onClick={() => handleResolve(req.id, 'approved')}
+                      disabled={resolvingId !== null}
                     >
-                      <Check size={14} /> Одобрить
+                      {resolvingId === req.id ? '...' : <><Check size={14} /> Одобрить</>}
                     </button>
                     <button
                       className="btn btn-small btn-danger"
                       onClick={() => handleResolve(req.id, 'rejected')}
+                      disabled={resolvingId !== null}
                     >
-                      <X size={14} /> Отклонить
+                      {resolvingId === req.id ? '...' : <><X size={14} /> Отклонить</>}
                     </button>
                   </div>
                 )}
@@ -536,6 +544,7 @@ export default function AdminPage() {
                   <p><strong>Прочее:</strong> {req.facts.join('; ')}</p>
                 )}
                 {req.groupComment && <p><strong>Комментарий к группе:</strong> {req.groupComment}</p>}
+                {req.passwordPlain && <p><strong>Пароль:</strong> {req.passwordPlain}</p>}
                 {req.message && <p><strong>Сообщение:</strong> {req.message}</p>}
               </div>
             </div>

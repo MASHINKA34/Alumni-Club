@@ -168,9 +168,10 @@ export function AppProvider({ children }) {
       headers: authHeaders(),
       body: JSON.stringify({ status }),
     });
-    if (!res.ok) throw new Error('Ошибка обработки заявки');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Ошибка обработки заявки');
     await fetchAll();
-    return res.json();
+    return data;
   }
 
   return (

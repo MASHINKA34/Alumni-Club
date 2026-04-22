@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Navigate } from 'react-router-dom';
 import { FilePen, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -7,6 +7,7 @@ const OTHER_GROUP = '__other__';
 
 export default function EditRequestPage() {
   const { user, submitEditRequest, graduates, groups } = useApp();
+  const fileInputRef = useRef(null);
 
   const myGraduate = user?.graduateId
     ? graduates.find((g) => g.id === user.graduateId)
@@ -22,10 +23,11 @@ export default function EditRequestPage() {
     graduationYear: myGraduate?.graduationYear || new Date().getFullYear(),
     job: myGraduate?.job || '',
     gender: myGraduate?.gender || 'Мужской',
-    photoConsent: myGraduate?.photoConsent ?? false,
     facts: [...(myGraduate?.facts || []), '', '', ''].slice(0, 3),
     message: '',
+    photo: myGraduate?.photo || '',
   });
+  const [photoPreview, setPhotoPreview] = useState(myGraduate?.photo || '');
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -44,6 +46,24 @@ export default function EditRequestPage() {
       facts[i] = value;
       return { ...prev, facts };
     });
+  }
+
+  function handlePhotoFile(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const dataUrl = ev.target.result;
+      setPhotoPreview(dataUrl);
+      handleChange('photo', dataUrl);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function handlePhotoUrl(value) {
+    handleChange('photo', value);
+    setPhotoPreview(value);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
   async function handleSubmit(e) {
@@ -120,7 +140,7 @@ export default function EditRequestPage() {
               >
                 <option value="">Выберите группу</option>
                 {groups.map((g) => <option key={g} value={g}>{g}</option>)}
-                <option value={OTHER_GROUP}>Другое (укажите в комментарии к заявке)</option>
+                <option value={OTHER_GROUP}>Другое (укажите в комментарии)</option>
               </select>
             </div>
             <div className="form-group">
@@ -179,14 +199,37 @@ export default function EditRequestPage() {
           </div>
 
           <div className="form-group">
-            <label className="form-label form-label--checkbox">
-              <input
-                type="checkbox"
-                checked={form.photoConsent}
-                onChange={(e) => handleChange('photoConsent', e.target.checked)}
+            <label className="form-label">Фото (аватарка)</label>
+            <input
+              className="form-input"
+              type="text"
+              placeholder="Вставьте ссылку на фото (https://...)"
+              value={typeof form.photo === 'string' && !form.photo.startsWith('data:') ? form.photo : ''}
+              onChange={(e) => handlePhotoUrl(e.target.value)}
+            />
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: '0.35rem 0' }}>или загрузите файл:</p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoFile}
+              style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}
+            />
+            {photoPreview && (
+              <img
+                src={photoPreview}
+                alt="preview"
+                onError={() => setPhotoPreview('')}
+                style={{
+                  marginTop: '0.5rem',
+                  width: 72,
+                  height: 72,
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  border: '2px solid var(--accent)',
+                }}
               />
-              Даю согласие на публикацию фотографии
-            </label>
+            )}
           </div>
 
           <div className="form-group">

@@ -55,9 +55,17 @@ db.exec(`
     gender         TEXT    DEFAULT 'Мужской',
     facts          TEXT    DEFAULT '[]',
     passwordHash   TEXT,
+    passwordPlain  TEXT,
     message        TEXT    DEFAULT ''
   );
 `);
+
+// Добавляем passwordPlain, если столбец ещё не существует (миграция для существующих БД)
+try {
+  db.exec("ALTER TABLE requests ADD COLUMN passwordPlain TEXT");
+} catch (_) {
+  // Столбец уже есть — игнорируем
+}
 
 // Преобразует строку БД → объект выпускника
 export function gradFromRow(row) {
@@ -97,6 +105,7 @@ export function requestFromRow(row) {
   };
   if (row.resolvedAt)    obj.resolvedAt    = row.resolvedAt;
   if (row.groupComment)  obj.groupComment  = row.groupComment;
+  if (row.passwordPlain) obj.passwordPlain = row.passwordPlain;
   return obj;
 }
 

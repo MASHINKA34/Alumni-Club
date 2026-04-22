@@ -1081,6 +1081,18 @@ img { display: block; }
   .admin-form-card {
     max-width: 100% !important;
   }
+
+  /* Файловый инпут не должен вылезать за край */
+  input[type="file"] {
+    max-width: 100%;
+    width: 100%;
+    font-size: 0.8rem;
+  }
+
+  /* Предотвращаем горизонтальный скролл страницы */
+  .page {
+    overflow-x: hidden;
+  }
 }
 
 /* ========= Home Page ========= */
@@ -1474,6 +1486,7 @@ img { display: block; }
   cursor: pointer;
   font-size: 0.875rem;
   color: var(--text-secondary);
+  flex-wrap: wrap;
 }
 
 .form-label--checkbox input[type="checkbox"] {
@@ -1481,6 +1494,29 @@ img { display: block; }
   height: 16px;
   accent-color: var(--accent);
   cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* Строка согласия: чекбокс + label рядом */
+.consent-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  flex-wrap: nowrap;
+}
+
+.consent-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.consent-row label {
+  line-height: 1.4;
+  word-break: break-word;
 }
 
 .form-textarea {

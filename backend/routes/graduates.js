@@ -78,7 +78,7 @@ router.put('/:id', authenticate, requireAdmin, async (req, res) => {
     rest.name ?? existing.name,
     rest.photo ?? existing.photo,
     photoConsent !== undefined ? (photoConsent ? 1 : 0) : existing.photoConsent,
-    group ?? existing.grp,
+    group || existing.grp,
     rest.graduationYear ?? existing.graduationYear,
     rest.job ?? existing.job,
     rest.gender ?? existing.gender,
