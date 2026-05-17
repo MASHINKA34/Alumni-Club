@@ -94,12 +94,17 @@ img { display: block; }
   position: sticky;
   top: 0;
   z-index: 100;
+  flex-shrink: 0;
 }
 
 .topbar-title {
   font-size: 0.95rem;
   font-weight: 700;
   color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .topbar-actions {
@@ -107,6 +112,7 @@ img { display: block; }
   display: flex;
   align-items: center;
   gap: 0.4rem;
+  flex-shrink: 0;
 }
 
 .topbar-icon-btn {
@@ -877,6 +883,7 @@ img { display: block; }
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 1.5rem;
+  min-width: 0;
 }
 
 .admin-list-header {
@@ -889,6 +896,7 @@ img { display: block; }
 
 .admin-table-wrap {
   overflow-x: auto;
+  max-width: 100%;
 }
 
 .admin-table {
@@ -1055,10 +1063,22 @@ img { display: block; }
     grid-template-columns: 1fr;
   }
 
-  /* Таблица admin — скроллируемая */
+  /* Таблица admin — горизонтальный скролл, колонки не сжимаются */
+  .admin-list-section {
+    padding: 1rem 0.75rem;
+  }
+
   .admin-table-wrap {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+  }
+
+  .admin-table {
+    min-width: 600px;
+  }
+
+  .admin-list-header {
+    flex-wrap: wrap;
   }
 
   /* Login */
@@ -1863,7 +1883,9 @@ img { display: block; }
 .chat-layout {
   display: grid;
   grid-template-columns: 320px 1fr;
+  grid-template-rows: 100%;
   height: calc(100vh - var(--topbar-height));
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -1872,6 +1894,8 @@ img { display: block; }
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 0;
+  overflow: hidden;
   background: var(--bg-secondary);
 }
 
@@ -1898,6 +1922,7 @@ img { display: block; }
 
 .chat-conv-list {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 0.5rem;
   display: flex;
@@ -2010,6 +2035,8 @@ img { display: block; }
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 0;
+  overflow: hidden;
   background: var(--bg-primary);
 }
 
@@ -2052,6 +2079,7 @@ img { display: block; }
 
 .chat-messages {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 1.25rem;
   display: flex;
@@ -2188,5 +2216,18 @@ img { display: block; }
   .chat-layout--thread-open .chat-thread { display: flex; }
   .chat-back-btn { display: flex; }
   .chat-bubble { max-width: 85%; }
-  .topbar { padding-left: 1rem; }
+
+  /* Топбар компактнее, чтобы влезли бургер + заголовок + иконки */
+  .topbar {
+    padding: 0 0.5rem 0 0.75rem;
+    gap: 0.5rem;
+  }
+  .topbar-title { font-size: 0.85rem; }
+  .topbar-actions { gap: 0.15rem; }
+  .topbar-icon-btn { width: 34px; height: 34px; }
+
+  /* Чат на всю высоту экрана под топбаром */
+  .chat-sidebar-header { padding: 0.75rem; }
+  .chat-composer { padding: 0.65rem 0.75rem; }
+  .chat-messages { padding: 1rem 0.85rem; }
 }
