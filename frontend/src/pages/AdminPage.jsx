@@ -5,12 +5,14 @@ import {
   FolderPlus, Folder, Check, X, Clock, Users, ClipboardList,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import PasswordInput from '../components/PasswordInput';
 
 const emptyForm = {
   name: '',
   photo: '',
   photoConsent: true,
   group: '',
+  roles: ['student'],
   graduationYear: new Date().getFullYear(),
   job: '',
   gender: 'Мужской',
@@ -67,6 +69,15 @@ export default function AdminPage() {
     });
   }
 
+  function toggleRole(role) {
+    setForm((prev) => {
+      const has = prev.roles.includes(role);
+      let roles = has ? prev.roles.filter((r) => r !== role) : [...prev.roles, role];
+      if (roles.length === 0) roles = [role];
+      return { ...prev, roles };
+    });
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     const data = {
@@ -97,6 +108,7 @@ export default function AdminPage() {
       photo: grad.photo || '',
       photoConsent: grad.photoConsent ?? true,
       group: groupValue,
+      roles: grad.roles?.length ? [...grad.roles] : ['student'],
       graduationYear: grad.graduationYear,
       job: grad.job || '',
       gender: grad.gender || 'Мужской',
@@ -258,15 +270,37 @@ export default function AdminPage() {
                 />
               </div>
 
+              <div className="form-group">
+                <label className="form-label">Роль</label>
+                <div className="role-toggle">
+                  <label className="role-chip">
+                    <input
+                      type="checkbox"
+                      checked={form.roles.includes('student')}
+                      onChange={() => toggleRole('student')}
+                    />
+                    Студент
+                  </label>
+                  <label className="role-chip">
+                    <input
+                      type="checkbox"
+                      checked={form.roles.includes('teacher')}
+                      onChange={() => toggleRole('teacher')}
+                    />
+                    Преподаватель
+                  </label>
+                </div>
+              </div>
+
               <div className="form-row">
                 <div className="form-group">
-                  <label className="form-label">Группа *</label>
+                  <label className="form-label">Группа</label>
                   <select
                     className="form-input"
                     value={form.group}
                     onChange={(e) => handleFormChange('group', e.target.value)}
-                    required
                   >
+                    <option value="">— без группы —</option>
                     {groups.map((g) => <option key={g} value={g}>{g}</option>)}
                   </select>
                 </div>
@@ -347,9 +381,7 @@ export default function AdminPage() {
                     <label className="form-label">
                       Пароль{editId !== null ? ' (оставьте пустым, чтобы не менять)' : ''}
                     </label>
-                    <input
-                      className="form-input"
-                      type="password"
+                    <PasswordInput
                       placeholder={editId !== null ? 'Новый пароль...' : 'Пароль для входа'}
                       value={form.password}
                       onChange={(e) => handleFormChange('password', e.target.value)}
@@ -428,7 +460,14 @@ export default function AdminPage() {
                         />
                       </td>
                       <td className="admin-table-name">{grad.name}</td>
-                      <td><span className="modal-group-badge">{grad.group}</span></td>
+                      <td>
+                        <div className="modal-badges">
+                          {grad.roles?.includes('teacher') && (
+                            <span className="modal-group-badge modal-group-badge--teacher">Препод.</span>
+                          )}
+                          {grad.group && <span className="modal-group-badge">{grad.group}</span>}
+                        </div>
+                      </td>
                       <td>{grad.graduationYear}</td>
                       <td className="admin-table-job">{grad.job}</td>
                       <td>
@@ -542,7 +581,6 @@ export default function AdminPage() {
                 <div className="request-card-meta">
                   <span className={`request-type-badge request-type-badge--${req.type}`}>
                     {req.type === 'registration' && 'Регистрация'}
-                    {req.type === 'edit' && 'Редактирование'}
                     {req.type === 'deletion' && 'Удаление аккаунта'}
                   </span>
                   <span className={`request-status-badge request-status-badge--${req.status}`}>

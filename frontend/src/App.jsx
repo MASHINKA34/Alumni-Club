@@ -1,15 +1,16 @@
 import { useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { Menu } from 'lucide-react';
 import { AppProvider } from './context/AppContext';
 import Sidebar from './components/Sidebar';
+import Topbar from './components/Topbar';
 import HomePage from './pages/HomePage';
 import GraduatesPage from './pages/GraduatesPage';
 import LoginPage from './pages/LoginPage';
 import AdminPage from './pages/AdminPage';
 import RegisterRequestPage from './pages/RegisterRequestPage';
-import EditRequestPage from './pages/EditRequestPage';
 import ProfilePage from './pages/ProfilePage';
+import ChatPage from './pages/ChatPage';
+import NotificationsPage from './pages/NotificationsPage';
 
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -28,16 +29,7 @@ export default function App() {
           <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
           <main className="app-main">
-            <div className="mobile-topbar">
-              <button
-                className="burger-btn"
-                onClick={() => setSidebarOpen(true)}
-                aria-label="Открыть меню"
-              >
-                <Menu size={22} />
-              </button>
-              <span className="mobile-topbar-title">Клуб Выпускников</span>
-            </div>
+            <Topbar onBurger={() => setSidebarOpen(true)} />
 
             <Routes>
               <Route path="/" element={<HomePage />} />
@@ -45,8 +37,10 @@ export default function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/admin" element={<AdminPage />} />
               <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/chat" element={<ChatPage />} />
+              <Route path="/chat/:peerId" element={<ChatPage />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/request/register" element={<RegisterRequestPage />} />
-              <Route path="/request/edit" element={<EditRequestPage />} />
             </Routes>
           </main>
         </div>

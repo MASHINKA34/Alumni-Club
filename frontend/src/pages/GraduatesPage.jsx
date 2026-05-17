@@ -1,30 +1,30 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Search, SearchX } from 'lucide-react';
+import { Search, SearchX, BookOpen } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import GraduateCard from '../components/GraduateCard';
 import GraduateModal from '../components/GraduateModal';
 
 export default function GraduatesPage() {
-  const { graduates, groups, loading, user } = useApp();
+  const { graduates, groups, loading } = useApp();
   const [searchParams] = useSearchParams();
   const [selected, setSelected] = useState(null);
   const [search, setSearch] = useState('');
 
   const filterGroup = searchParams.get('group');
+  const filterRole = searchParams.get('role'); // 'teacher'
 
-  const filtered = useMemo(() => {
-    return graduates.filter((g) => {
-      const matchGroup = filterGroup ? g.group === filterGroup : true;
-      const matchSearch = search
-        ? g.name.toLowerCase().includes(search.toLowerCase()) ||
-          g.group.toLowerCase().includes(search.toLowerCase())
-        : true;
-      return matchGroup && matchSearch;
-    });
-  }, [graduates, filterGroup, search]);
+  const matchesSearch = (g) => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return g.name.toLowerCase().includes(q) || (g.group || '').toLowerCase().includes(q);
+  };
 
-  const groupsToShow = filterGroup ? [filterGroup] : groups;
+  const isTeacher = (g) => g.roles?.includes('teacher');
+  const isStudent = (g) => !g.roles || g.roles.includes('student');
+
+  const teachers = graduates.filter((g) => isTeacher(g) && matchesSearch(g));
+  const filtered = graduates.filter(matchesSearch);
 
   if (loading) {
     return (
@@ -34,18 +34,41 @@ export default function GraduatesPage() {
     );
   }
 
+  const title = filterRole === 'teacher'
+    ? 'Преподаватели'
+    : filterGroup ? `Группа ${filterGroup}` : 'Выпускники';
+  const subtitle = filterRole === 'teacher'
+    ? 'Преподаватели университета'
+    : filterGroup ? `Выпускники группы ${filterGroup}` : 'Все выпускники нашего университета';
+
+  // Какие секции рисуем
+  let sections = [];
+  if (filterRole === 'teacher') {
+    sections = [{ key: 'teachers', label: 'Преподаватели', icon: true, items: teachers }];
+  } else if (filterGroup) {
+    sections = [{
+      key: filterGroup,
+      label: filterGroup,
+      items: filtered.filter((g) => isStudent(g) && g.group === filterGroup),
+    }];
+  } else {
+    if (teachers.length > 0) {
+      sections.push({ key: 'teachers', label: 'Преподаватели', icon: true, items: teachers });
+    }
+    for (const group of groups) {
+      const items = filtered.filter((g) => isStudent(g) && g.group === group);
+      if (items.length > 0) sections.push({ key: group, label: group, items });
+    }
+  }
+
+  const totalShown = sections.reduce((n, s) => n + s.items.length, 0);
+
   return (
     <div className="page">
       <div className="page-header">
         <div>
-          <h1 className="page-title">
-            {filterGroup ? `Группа ${filterGroup}` : 'Выпускники'}
-          </h1>
-          <p className="page-subtitle">
-            {filterGroup
-              ? `Выпускники группы ${filterGroup}`
-              : 'Все выпускники нашего университета'}
-          </p>
+          <h1 className="page-title">{title}</h1>
+          <p className="page-subtitle">{subtitle}</p>
         </div>
 
         <div className="search-wrap">
@@ -60,25 +83,26 @@ export default function GraduatesPage() {
         </div>
       </div>
 
-      {groupsToShow.map((group) => {
-        const groupGrads = filtered.filter((g) => g.group === group);
-        if (groupGrads.length === 0) return null;
-        return (
-          <section key={group} className="group-section">
+      {sections.map((section) => (
+        section.items.length === 0 ? null : (
+          <section key={section.key} className="group-section">
             <div className="group-header">
-              <h2 className="group-title">{group}</h2>
-              <span className="group-count">{groupGrads.length} чел.</span>
+              <h2 className="group-title">
+                {section.icon && <BookOpen size={17} style={{ verticalAlign: '-3px', marginRight: 6, color: 'var(--accent)' }} />}
+                {section.label}
+              </h2>
+              <span className="group-count">{section.items.length} чел.</span>
             </div>
             <div className="graduates-grid">
-              {groupGrads.map((grad) => (
+              {section.items.map((grad) => (
                 <GraduateCard key={grad.id} graduate={grad} onClick={setSelected} />
               ))}
             </div>
           </section>
-        );
-      })}
+        )
+      ))}
 
-      {filtered.length === 0 && (
+      {totalShown === 0 && (
         <div className="empty-state">
           <SearchX size={48} strokeWidth={1.5} />
           <p>Выпускники не найдены</p>
@@ -86,10 +110,7 @@ export default function GraduatesPage() {
       )}
 
       {selected && (
-        <GraduateModal
-          graduate={selected}
-          onClose={() => setSelected(null)}
-        />
+        <GraduateModal graduate={selected} onClose={() => setSelected(null)} />
       )}
     </div>
   );

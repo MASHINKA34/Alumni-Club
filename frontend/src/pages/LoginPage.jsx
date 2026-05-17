@@ -2,15 +2,17 @@ import { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { KeyRound, ShieldAlert } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import PasswordInput from '../components/PasswordInput';
 
 export default function LoginPage() {
   const { login, user, isAdmin } = useApp();
   const navigate = useNavigate();
 
-  if (user) return <Navigate to={isAdmin ? '/admin' : '/profile'} replace />;
   const [form, setForm] = useState({ login: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  if (user) return <Navigate to={isAdmin ? '/admin' : '/profile'} replace />;
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -53,9 +55,7 @@ export default function LoginPage() {
           </div>
           <div className="form-group">
             <label className="form-label">Пароль</label>
-            <input
-              className="form-input"
-              type="password"
+            <PasswordInput
               placeholder="Введите пароль"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}

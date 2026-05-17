@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { ClipboardList, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import PasswordInput from '../components/PasswordInput';
 
 const OTHER_GROUP = '__other__';
 
@@ -9,6 +10,7 @@ export default function RegisterRequestPage() {
   const fileInputRef = useRef(null);
   const [form, setForm] = useState({
     name: '',
+    roles: ['student'],
     group: '',
     groupComment: '',
     graduationYear: new Date().getFullYear(),
@@ -26,9 +28,19 @@ export default function RegisterRequestPage() {
   const [loading, setLoading] = useState(false);
 
   const isOtherGroup = form.group === OTHER_GROUP;
+  const isTeacherOnly = form.roles.length === 1 && form.roles[0] === 'teacher';
 
   function handleChange(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
+  }
+
+  function toggleRole(role) {
+    setForm((prev) => {
+      const has = prev.roles.includes(role);
+      let roles = has ? prev.roles.filter((r) => r !== role) : [...prev.roles, role];
+      if (roles.length === 0) roles = [role];
+      return { ...prev, roles };
+    });
   }
 
   function handleFactChange(i, value) {
@@ -81,8 +93,8 @@ export default function RegisterRequestPage() {
         ...form,
         graduationYear: Number(form.graduationYear),
         facts: form.facts.filter((f) => f.trim() !== ''),
-        group: isOtherGroup ? 'Другое' : form.group,
-        groupComment: isOtherGroup ? form.groupComment : undefined,
+        group: isTeacherOnly ? '' : (isOtherGroup ? 'Другое' : form.group),
+        groupComment: isTeacherOnly ? undefined : (isOtherGroup ? form.groupComment : undefined),
       });
       setSent(true);
     } catch (err) {
@@ -134,20 +146,47 @@ export default function RegisterRequestPage() {
             />
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
-              <label className="form-label">Группа *</label>
-              <select
-                className="form-input"
-                value={form.group}
-                onChange={(e) => handleChange('group', e.target.value)}
-                required
-              >
-                <option value="">Выберите группу</option>
-                {groups.map((g) => <option key={g} value={g}>{g}</option>)}
-                <option value={OTHER_GROUP}>Другое (укажите в комментарии)</option>
-              </select>
+          <div className="form-group">
+            <label className="form-label">Кто вы? *</label>
+            <div className="role-toggle">
+              <label className="role-chip">
+                <input
+                  type="checkbox"
+                  checked={form.roles.includes('student')}
+                  onChange={() => toggleRole('student')}
+                />
+                Студент / выпускник
+              </label>
+              <label className="role-chip">
+                <input
+                  type="checkbox"
+                  checked={form.roles.includes('teacher')}
+                  onChange={() => toggleRole('teacher')}
+                />
+                Преподаватель
+              </label>
             </div>
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>
+              Можно выбрать оба варианта, если вы и студент, и преподаватель.
+            </p>
+          </div>
+
+          <div className="form-row">
+            {!isTeacherOnly && (
+              <div className="form-group">
+                <label className="form-label">Группа *</label>
+                <select
+                  className="form-input"
+                  value={form.group}
+                  onChange={(e) => handleChange('group', e.target.value)}
+                  required
+                >
+                  <option value="">Выберите группу</option>
+                  {groups.map((g) => <option key={g} value={g}>{g}</option>)}
+                  <option value={OTHER_GROUP}>Другое (укажите в комментарии)</option>
+                </select>
+              </div>
+            )}
             <div className="form-group">
               <label className="form-label">Год выпуска *</label>
               <input
@@ -163,7 +202,7 @@ export default function RegisterRequestPage() {
             </div>
           </div>
 
-          {isOtherGroup && (
+          {!isTeacherOnly && isOtherGroup && (
             <div className="form-group">
               <label className="form-label">Комментарий к группе *</label>
               <input
@@ -256,9 +295,7 @@ export default function RegisterRequestPage() {
             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
               После одобрения заявки вы сможете войти в личный кабинет. Логин — ваше ФИО.
             </p>
-            <input
-              className="form-input"
-              type="password"
+            <PasswordInput
               placeholder="Придумайте пароль"
               value={form.password}
               onChange={(e) => handleChange('password', e.target.value)}

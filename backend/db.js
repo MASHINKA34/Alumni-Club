@@ -21,7 +21,8 @@ db.exec(`
     graduationYear INTEGER NOT NULL,
     job         TEXT    NOT NULL DEFAULT '',
     gender      TEXT    NOT NULL DEFAULT 'Мужской',
-    facts       TEXT    NOT NULL DEFAULT '[]'
+    facts       TEXT    NOT NULL DEFAULT '[]',
+    roles       TEXT    NOT NULL DEFAULT '["student"]'
   );
 
   CREATE TABLE IF NOT EXISTS users (
@@ -54,17 +55,41 @@ db.exec(`
     job            TEXT    DEFAULT '',
     gender         TEXT    DEFAULT 'Мужской',
     facts          TEXT    DEFAULT '[]',
+    roles          TEXT    DEFAULT '["student"]',
     passwordHash   TEXT,
     passwordPlain  TEXT,
     message        TEXT    DEFAULT ''
   );
+
+  CREATE TABLE IF NOT EXISTS messages (
+    id          INTEGER PRIMARY KEY,
+    senderId    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    recipientId INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    body        TEXT    NOT NULL,
+    createdAt   TEXT    NOT NULL,
+    readAt      TEXT
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_messages_pair      ON messages (senderId, recipientId);
+  CREATE INDEX IF NOT EXISTS idx_messages_recipient ON messages (recipientId, readAt);
 `);
 
-// Добавляем passwordPlain, если столбец ещё не существует (миграция для существующих БД)
-try {
-  db.exec("ALTER TABLE requests ADD COLUMN passwordPlain TEXT");
-} catch (_) {
-  // Столбец уже есть — игнорируем
+// Миграции для существующих БД — каждый ALTER идемпотентен через try/catch
+for (const stmt of [
+  "ALTER TABLE requests  ADD COLUMN passwordPlain TEXT",
+  `ALTER TABLE graduates ADD COLUMN roles TEXT NOT NULL DEFAULT '["student"]'`,
+  `ALTER TABLE requests  ADD COLUMN roles TEXT DEFAULT '["student"]'`,
+]) {
+  try { db.exec(stmt); } catch (_) { /* столбец уже есть */ }
+}
+
+// Безопасный парс ролей: всегда непустой массив из {student|teacher}
+export function parseRoles(raw) {
+  let arr;
+  try { arr = JSON.parse(raw || '["student"]'); } catch { arr = ['student']; }
+  if (!Array.isArray(arr)) arr = ['student'];
+  const cleaned = arr.filter((r) => r === 'student' || r === 'teacher');
+  return cleaned.length ? [...new Set(cleaned)] : ['student'];
 }
 
 // Преобразует строку БД → объект выпускника
@@ -80,6 +105,7 @@ export function gradFromRow(row) {
     job:            row.job || '',
     gender:         row.gender || 'Мужской',
     facts:          JSON.parse(row.facts || '[]'),
+    roles:          parseRoles(row.roles),
   };
 }
 
@@ -101,6 +127,7 @@ export function requestFromRow(row) {
     job:            row.job || '',
     gender:         row.gender || 'Мужской',
     facts:          JSON.parse(row.facts || '[]'),
+    roles:          parseRoles(row.roles),
     message:        row.message || '',
   };
   if (row.resolvedAt)    obj.resolvedAt    = row.resolvedAt;

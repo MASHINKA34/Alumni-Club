@@ -1,15 +1,27 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
-import db, { gradFromRow, requestFromRow } from '../db.js';
+import db, { requestFromRow } from '../db.js';
 import { authenticate, requireAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Подача заявки на регистрацию (без авторизации)
+function rolesToJson(roles) {
+  const arr = Array.isArray(roles) ? roles.filter((r) => r === 'student' || r === 'teacher') : [];
+  return JSON.stringify(arr.length ? [...new Set(arr)] : ['student']);
+}
+
+// Подача заявки на регистрацию (без авторизации). Студент / преподаватель / оба.
 router.post('/register', async (req, res) => {
-  const { password, group, facts, photoConsent, groupComment, ...rest } = req.body;
-  if (!rest.name || !group || !rest.graduationYear) {
-    return res.status(400).json({ error: 'Заполните обязательные поля: ФИО, группа, год выпуска' });
+  const { password, group, facts, photoConsent, groupComment, roles, ...rest } = req.body;
+  const rolesArr = Array.isArray(roles) && roles.length ? roles : ['student'];
+  const isTeacherOnly = rolesArr.length === 1 && rolesArr[0] === 'teacher';
+
+  if (!rest.name || !rest.graduationYear || (!isTeacherOnly && !group)) {
+    return res.status(400).json({
+      error: isTeacherOnly
+        ? 'Заполните обязательные поля: ФИО, год'
+        : 'Заполните обязательные поля: ФИО, группа, год выпуска',
+    });
   }
   if (!password) {
     return res.status(400).json({ error: 'Пароль обязателен' });
@@ -24,58 +36,30 @@ router.post('/register', async (req, res) => {
 
   const existingUser = db.prepare('SELECT id FROM users WHERE login=?').get(rest.name);
   if (existingUser) {
-    return res.status(409).json({ error: 'Выпускник с таким именем уже зарегистрирован в системе' });
+    return res.status(409).json({ error: 'Пользователь с таким именем уже зарегистрирован в системе' });
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
 
   db.prepare(`
     INSERT INTO requests
-      (type, status, createdAt, name, photo, photoConsent, grp, groupComment, graduationYear, job, gender, facts, passwordHash, passwordPlain, message)
-    VALUES (?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (type, status, createdAt, name, photo, photoConsent, grp, groupComment, graduationYear, job, gender, facts, roles, passwordHash, passwordPlain, message)
+    VALUES (?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     'registration',
     new Date().toISOString(),
     rest.name,
     rest.photo || null,
     photoConsent ? 1 : 0,
-    group,
+    isTeacherOnly ? '' : group,
     groupComment || null,
     rest.graduationYear,
     rest.job || '',
     rest.gender || 'Мужской',
     JSON.stringify(facts || []),
+    rolesToJson(rolesArr),
     passwordHash,
     password,
-    rest.message || ''
-  );
-
-  res.status(201).json({ success: true });
-});
-
-// Подача заявки на редактирование (требует авторизации)
-router.post('/edit', authenticate, (req, res) => {
-  const { group, facts, photoConsent, groupComment, ...rest } = req.body;
-
-  db.prepare(`
-    INSERT INTO requests
-      (type, status, createdAt, submittedBy, graduateId, name, photo, photoConsent, grp, groupComment,
-       graduationYear, job, gender, facts, message)
-    VALUES (?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(
-    'edit',
-    new Date().toISOString(),
-    req.user.id,
-    req.user.graduateId || rest.graduateId || null,
-    rest.name || null,
-    rest.photo || null,
-    photoConsent ? 1 : 0,
-    group || '',
-    groupComment || null,
-    rest.graduationYear || null,
-    rest.job || '',
-    rest.gender || 'Мужской',
-    JSON.stringify(facts || []),
     rest.message || ''
   );
 
@@ -134,8 +118,8 @@ router.put('/:id', authenticate, requireAdmin, async (req, res) => {
       if (status === 'approved') {
         if (request.type === 'registration') {
           const info = db.prepare(`
-            INSERT INTO graduates (name, photo, photoConsent, grp, graduationYear, job, gender, facts)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO graduates (name, photo, photoConsent, grp, graduationYear, job, gender, facts, roles)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
           `).run(
             request.name,
             request.photo || null,
@@ -144,7 +128,8 @@ router.put('/:id', authenticate, requireAdmin, async (req, res) => {
             request.graduationYear,
             request.job || '',
             request.gender || 'Мужской',
-            request.facts || '[]'
+            request.facts || '[]',
+            request.roles || '["student"]'
           );
           const newGradId = info.lastInsertRowid;
           db.prepare('UPDATE requests SET graduateId=? WHERE id=?').run(newGradId, id);
@@ -152,31 +137,6 @@ router.put('/:id', authenticate, requireAdmin, async (req, res) => {
           if (request.name && request.passwordHash) {
             db.prepare('INSERT INTO users (login, password, role, graduateId) VALUES (?, ?, ?, ?)')
               .run(request.name, request.passwordHash, 'member', newGradId);
-          }
-        }
-
-        if (request.type === 'edit' && request.graduateId) {
-          const existing = db.prepare('SELECT * FROM graduates WHERE id = ?').get(request.graduateId);
-          if (existing) {
-            db.prepare(`
-              UPDATE graduates
-              SET name=?, photo=?, photoConsent=?, grp=?, graduationYear=?, job=?, gender=?, facts=?
-              WHERE id=?
-            `).run(
-              request.name ?? existing.name,
-              request.photo ?? existing.photo,
-              request.photoConsent ?? existing.photoConsent,
-              request.grp || existing.grp,
-              request.graduationYear ?? existing.graduationYear,
-              request.job ?? existing.job,
-              request.gender ?? existing.gender,
-              request.facts ?? existing.facts,
-              request.graduateId
-            );
-
-            if (request.name) {
-              db.prepare('UPDATE users SET login=? WHERE graduateId=?').run(request.name, request.graduateId);
-            }
           }
         }
 

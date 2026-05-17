@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, Calendar, Briefcase, BookOpen, ArrowRight, FilePen } from 'lucide-react';
+import { X, Calendar, Briefcase, BookOpen, ArrowRight, FilePen, MessageSquare } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 const MALE_AVATAR = (
@@ -30,7 +30,7 @@ const FEMALE_AVATAR = (
 
 export default function GraduateModal({ graduate, onClose }) {
   const navigate = useNavigate();
-  const { isAdmin } = useApp();
+  const { user } = useApp();
 
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape') onClose(); }
@@ -73,7 +73,14 @@ export default function GraduateModal({ graduate, onClose }) {
           </div>
           <div className="modal-title-block">
             <h2 className="modal-name">{graduate.name}</h2>
-            <span className="modal-group-badge">{graduate.group}</span>
+            <div className="modal-badges">
+              {graduate.roles?.includes('teacher') && (
+                <span className="modal-group-badge modal-group-badge--teacher">Преподаватель</span>
+              )}
+              {graduate.roles?.includes('student') && graduate.group && (
+                <span className="modal-group-badge">{graduate.group}</span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -114,15 +121,28 @@ export default function GraduateModal({ graduate, onClose }) {
             </div>
           )}
 
-          {!isAdmin && (
+          {user && user.graduateId === graduate.id && (
             <div className="modal-edit-action">
               <button
                 className="btn btn-primary"
                 style={{ width: '100%', justifyContent: 'center', gap: '0.4rem' }}
-                onClick={() => { onClose(); navigate('/request/edit'); }}
+                onClick={() => { onClose(); navigate('/profile'); }}
               >
                 <FilePen size={15} />
-                Подать заявку на изменение данных
+                Редактировать профиль
+              </button>
+            </div>
+          )}
+
+          {user && user.graduateId !== graduate.id && graduate.userId && (
+            <div className="modal-edit-action">
+              <button
+                className="btn btn-primary"
+                style={{ width: '100%', justifyContent: 'center', gap: '0.4rem' }}
+                onClick={() => { onClose(); navigate(`/chat/${graduate.userId}`); }}
+              >
+                <MessageSquare size={15} />
+                Написать сообщение
               </button>
             </div>
           )}

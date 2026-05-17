@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Users, GraduationCap, ArrowRight, ClipboardList, FilePen } from 'lucide-react';
+import { Users, GraduationCap, ArrowRight, ClipboardList, UserCircle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export default function HomePage() {
@@ -35,9 +35,9 @@ export default function HomePage() {
               <ArrowRight size={16} />
             </Link>
             {isMember && !isAdmin ? (
-              <Link to="/request/edit" className="btn btn-secondary home-btn-secondary">
-                <FilePen size={16} />
-                Подать заявку на изменение данных
+              <Link to="/profile" className="btn btn-secondary home-btn-secondary">
+                <UserCircle size={16} />
+                Мой профиль
               </Link>
             ) : !isAdmin && (
               <Link to="/request/register" className="btn btn-secondary home-btn-secondary">
@@ -50,13 +50,16 @@ export default function HomePage() {
       </section>
 
       <section className="home-stats">
-        {stats.map(({ label, value, icon: Icon }) => (
-          <div key={label} className="home-stat-card">
-            <Icon size={28} color="#6366f1" strokeWidth={1.5} />
-            <div className="home-stat-value">{value}</div>
-            <div className="home-stat-label">{label}</div>
-          </div>
-        ))}
+        {stats.map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <div key={stat.label} className="home-stat-card">
+              <Icon size={28} color="#6366f1" strokeWidth={1.5} />
+              <div className="home-stat-value">{stat.value}</div>
+              <div className="home-stat-label">{stat.label}</div>
+            </div>
+          );
+        })}
       </section>
 
       <section className="home-about">
@@ -68,9 +71,8 @@ export default function HomePage() {
         </p>
         <p className="home-about-text">
           Если вы выпускник нашего университета и хотите быть в базе клуба —
-          подайте заявку на регистрацию. Если вы уже зарегистрированы и хотите
-          обновить информацию о себе — войдите в аккаунт и подайте заявку на
-          редактирование данных.
+          подайте заявку на регистрацию. Если вы уже зарегистрированы — войдите
+          в аккаунт, чтобы редактировать профиль и общаться с другими участниками.
         </p>
       </section>
     </div>

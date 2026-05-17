@@ -1,8 +1,14 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 const AppContext = createContext(null);
 
 const API = import.meta.env.VITE_API_URL || '/api';
+
+function getInitialTheme() {
+  const saved = localStorage.getItem('theme');
+  if (saved === 'light' || saved === 'dark') return saved;
+  return window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+}
 
 export function AppProvider({ children }) {
   const [graduates, setGraduates] = useState([]);
@@ -11,20 +17,31 @@ export function AppProvider({ children }) {
   const [user, setUser] = useState(() => {
     try { return JSON.parse(localStorage.getItem('user')); } catch { return null; }
   });
+  const [theme, setTheme] = useState(getInitialTheme);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const isAdmin = user?.role === 'admin';
   const isMember = user?.role === 'member';
 
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = useCallback(() => {
+    setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
+  }, []);
+
   // Всегда читает актуальный токен из storage — важно при вызове сразу после login/logout
-  function authHeaders() {
+  const authHeaders = useCallback(() => {
     const currentToken = localStorage.getItem('token');
     return {
       'Content-Type': 'application/json',
       ...(currentToken ? { Authorization: `Bearer ${currentToken}` } : {}),
     };
-  }
+  }, []);
 
-  async function fetchAll() {
+  const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
       const [gradsRes, groupsRes] = await Promise.all([
@@ -38,9 +55,47 @@ export function AppProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [authHeaders]);
 
-  useEffect(() => { fetchAll(); }, []);
+  useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  // Валидируем сессию и подтягиваем актуальные данные (в т.ч. userId для чатов)
+  useEffect(() => {
+    if (!localStorage.getItem('token')) return;
+    (async () => {
+      try {
+        const res = await fetch(`${API}/auth/me`, { headers: authHeaders() });
+        if (res.status === 401) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setUser(null);
+          return;
+        }
+        if (res.ok) {
+          const fresh = await res.json();
+          localStorage.setItem('user', JSON.stringify(fresh));
+          setUser((prev) => (JSON.stringify(prev) === JSON.stringify(fresh) ? prev : fresh));
+        }
+      } catch { /* офлайн — оставляем кэш */ }
+    })();
+  }, [authHeaders]);
+
+  const refreshUnread = useCallback(async () => {
+    if (!localStorage.getItem('token')) { setUnreadCount(0); return; }
+    try {
+      const res = await fetch(`${API}/messages/unread-count`, { headers: authHeaders() });
+      if (res.ok) setUnreadCount((await res.json()).count || 0);
+    } catch { /* нет сети — игнорируем */ }
+  }, [authHeaders]);
+
+  // Поллинг непрочитанных, пока пользователь авторизован
+  const userId = user?.userId;
+  useEffect(() => {
+    if (!user) { setUnreadCount(0); return; }
+    refreshUnread();
+    const t = setInterval(refreshUnread, 15000);
+    return () => clearInterval(t);
+  }, [user, userId, refreshUnread]);
 
   async function login(loginVal, password) {
     const res = await fetch(`${API}/auth/login`, {
@@ -54,10 +109,9 @@ export function AppProvider({ children }) {
     }
     const data = await res.json();
     localStorage.setItem('token', data.token);
-    const userData = { role: data.role, graduateId: data.graduateId, login: data.login };
+    const userData = { role: data.role, graduateId: data.graduateId, login: data.login, userId: data.userId };
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
-    // Рефетч с токеном — получаем реальные фото для авторизованного пользователя
     await fetchAll();
     return data.role;
   }
@@ -66,7 +120,7 @@ export function AppProvider({ children }) {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
-    // Рефетч без токена — фото будут скрыты
+    setUnreadCount(0);
     fetchAll();
   }
 
@@ -94,6 +148,24 @@ export function AppProvider({ children }) {
     return updated;
   }
 
+  async function updateOwnProfile(data) {
+    const res = await fetch(`${API}/graduates/me`, {
+      method: 'PUT',
+      headers: authHeaders(),
+      body: JSON.stringify(data),
+    });
+    const updated = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(updated.error || 'Ошибка сохранения профиля');
+    setGraduates((prev) => prev.map((g) => (g.id === updated.id ? updated : g)));
+    // Логин мог синхронизироваться с новым ФИО
+    if (updated.userLogin && user && updated.userLogin !== user.login) {
+      const next = { ...user, login: updated.userLogin };
+      localStorage.setItem('user', JSON.stringify(next));
+      setUser(next);
+    }
+    return updated;
+  }
+
   async function deleteGraduate(id) {
     const res = await fetch(`${API}/graduates/${id}`, {
       method: 'DELETE',
@@ -113,8 +185,7 @@ export function AppProvider({ children }) {
       const err = await res.json();
       throw new Error(err.error || 'Ошибка добавления группы');
     }
-    const newGroups = await res.json();
-    setGroups(newGroups);
+    setGroups(await res.json());
   }
 
   async function deleteGroup(name) {
@@ -136,15 +207,6 @@ export function AppProvider({ children }) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.error || 'Ошибка отправки заявки');
     }
-  }
-
-  async function submitEditRequest(data) {
-    const res = await fetch(`${API}/requests/edit`, {
-      method: 'POST',
-      headers: authHeaders(),
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) throw new Error('Ошибка отправки заявки');
   }
 
   async function submitDeletionRequest(data) {
@@ -182,14 +244,48 @@ export function AppProvider({ children }) {
     return data;
   }
 
+  // ===== Сообщения =====
+  const messagesApi = {
+    contacts: async () => {
+      const res = await fetch(`${API}/messages/contacts`, { headers: authHeaders() });
+      if (!res.ok) throw new Error('Ошибка загрузки контактов');
+      return res.json();
+    },
+    conversations: async () => {
+      const res = await fetch(`${API}/messages/conversations`, { headers: authHeaders() });
+      if (!res.ok) throw new Error('Ошибка загрузки диалогов');
+      return res.json();
+    },
+    thread: async (peerId) => {
+      const res = await fetch(`${API}/messages/with/${peerId}`, { headers: authHeaders() });
+      if (!res.ok) throw new Error('Ошибка загрузки переписки');
+      const data = await res.json();
+      refreshUnread();
+      return data;
+    },
+    send: async (recipientId, body) => {
+      const res = await fetch(`${API}/messages`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({ recipientId, body }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Ошибка отправки сообщения');
+      return data;
+    },
+  };
+
   return (
     <AppContext.Provider value={{
       graduates, groups, loading, user, isAdmin, isMember,
+      theme, toggleTheme,
+      unreadCount, refreshUnread,
       login, logout,
-      addGraduate, updateGraduate, deleteGraduate,
+      addGraduate, updateGraduate, updateOwnProfile, deleteGraduate,
       addGroup, deleteGroup,
-      submitRegisterRequest, submitEditRequest, submitDeletionRequest,
+      submitRegisterRequest, submitDeletionRequest,
       fetchRequests, resolveRequest, deleteRequest,
+      messagesApi,
       refetch: fetchAll,
     }}>
       {children}
@@ -197,6 +293,7 @@ export function AppProvider({ children }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useApp() {
   return useContext(AppContext);
 }

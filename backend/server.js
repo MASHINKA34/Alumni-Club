@@ -8,6 +8,7 @@ import authRoutes from './routes/auth.js';
 import graduatesRoutes from './routes/graduates.js';
 import groupsRoutes from './routes/groups.js';
 import requestsRoutes from './routes/requests.js';
+import messagesRoutes from './routes/messages.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,6 +26,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/graduates', graduatesRoutes);
 app.use('/api/groups', groupsRoutes);
 app.use('/api/requests', requestsRoutes);
+app.use('/api/messages', messagesRoutes);
 
 // Инициализация: создаём admin если таблица users пуста
 async function init() {
